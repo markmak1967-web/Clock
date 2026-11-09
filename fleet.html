@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Fleet - The Clock</title>
+<style>
+body{margin:0;background:#0b0d10;color:#eef2f6;font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}main{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:22px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.c{background:#161a20;border-radius:16px;padding:14px;border-top:5px solid #3ccf7e}.c.w1{border-color:#f2c53a}.c.w2{border-color:#ff8a3d}.c.na{opacity:.6;border-color:#39414d}
+.c b{font-size:17px}.d{color:#8b95a3;font-size:13px}ul{margin:8px 0 0;padding-left:18px;font-size:14px}
+</style></head><body><main><h1>Fleet</h1><p class="d">Cars needing attention first. Units waiting for approval are faded: set approved = TRUE in the Units tab. Queue a message or a setting for a car in the Messages tab (kind "message", or kind "set" with text like coolant:amber:106).</p><div class="grid" id="g"></div></main>
+<script src="config.js"></script>
+<script>
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+function ago(t) { if (!t) return 'never'; const s = (Date.now() - new Date(t)) / 1000; return s < 7200 ? Math.round(s / 60) + ' min ago' : s < 172800 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; }
+addEventListener('hashchange', () => location.reload());
+const K = decodeURIComponent(location.hash.slice(1)), g = document.getElementById('g');
+g.innerHTML = '<p class="d">Loading...</p>';
+fetch(window.CLOCK.sheet + '?' + new URLSearchParams({api: 'fleet', k: K}), {cache: 'no-store'}).then(r => r.json()).then(r => { if (!r.ok) { g.innerHTML = '<p>Open this page from the fleet link (it carries the fleet key).</p>'; return; } const D = r.units;
+g.innerHTML = D.map(u => `<div class="c ${!u.approved ? 'na' : u.worst >= 2 ? 'w2' : u.worst ? 'w1' : ''}">
+  <b>${esc(u.name || '(no name)')}</b><div class="d">${esc([u.year, u.model, u.engine].filter(Boolean).join(' '))} · ${esc(u.unit)}</div>
+  <div class="d">Last seen ${ago(u.last_seen)} · ${esc(u.eng_h || 0)} engine h · ${esc(u.runs || 0)} runs · ${esc(u.fw)}</div>
+  ${u.open.length ? '<ul>' + u.open.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul>' : '<div class="d" style="margin-top:6px">No open advice</div>'}</div>`).join('') || '<p>No gauges yet.</p>'; }).catch(() => { g.innerHTML = '<p>Could not reach the data.</p>'; });
+</script></body></html>
