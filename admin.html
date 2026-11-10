@@ -11,7 +11,8 @@ nav{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px;position:sticky;top:0;
 nav button{min-height:38px}nav button.on{background:var(--acc);color:#1a1205;border-color:var(--acc)}
 button,select,input,textarea{font:600 14px inherit;font-family:inherit;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--seg);color:var(--txt);padding:0 12px}
 input,textarea{font-weight:400;width:100%}textarea{padding:8px 12px;min-height:64px}
-button{cursor:pointer}button.acc{background:var(--acc);color:#1a1205;border:0}button.sm{min-height:30px;padding:0 9px;font-size:13px}
+button{cursor:pointer}button.acc{background:var(--acc);color:#1a1205;border:0}button.danger{background:#8f1f1f;color:#fff;border:0}button:disabled{opacity:.4;cursor:not-allowed}
+.card.danger{border:1px solid #5a2020}button.sm{min-height:30px;padding:0 9px;font-size:13px}
 .card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:14px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
 .tile{background:var(--card);border-radius:14px;padding:12px}.tile small{display:block;color:var(--dim);font-size:12px}.tile b{font-size:24px}
@@ -98,8 +99,16 @@ function show() {
       ${att.length ? `<div class="card"><h2>Worth a look</h2>${gaugeTable(att)}</div>` : ''}
       <div class="card"><h2>Recent tests and uploads</h2>${testTable(O.tests.slice(0, 8))}</div>
       <div class="card"><h2>Sheet tabs</h2><div class="row2">${Object.keys(c).map(k => `<span class="pill">${esc(k)} ${c[k] == null ? 'missing' : c[k]}</span>`).join(' ')}</div>
-      <div class="row2" style="margin-top:12px"><button id="night">Run the nightly job now</button><span class="d">Usage blocks, fleet bands, rule and AI advice, advice emails. Takes up to a minute.</span></div><div id="nr"></div></div>`);
+      <div class="row2" style="margin-top:12px"><button id="night">Run the nightly job now</button><span class="d">Usage blocks, fleet bands, rule and AI advice, advice emails. Takes up to a minute.</span></div><div id="nr"></div></div>
+      <div class="card"><h2>Demo fleet</h2><p class="note">${u.filter(x => /^MGF-DEMO/.test(x.unit)).length ? u.filter(x => /^MGF-DEMO/.test(x.unit)).length + ' demo cars in the sheet (demo1 to demo5).' : 'No demo cars in the sheet.'}
+        Making it replaces any demo cars already there and sends demo1's two emails; with an AI key it asks for five AI reviews (up to a minute or two).</p>
+        <div class="row2"><button id="demomake">Make the demo fleet</button><button id="demorm" class="danger">Remove the demo fleet</button></div>
+        <div id="demoask" style="display:none;margin-top:10px" class="row2"><span>Remove all five demo cars and their drive logs?</span><button id="demoyes" class="danger">Yes, remove them</button><button id="demono">Cancel</button></div><div id="dr"></div></div>`);
     document.querySelectorAll('tr.click').forEach(bindGauge);
+    $('#demorm').onclick = () => { $('#demoask').style.display = 'flex'; };
+    $('#demono').onclick = () => { $('#demoask').style.display = 'none'; };
+    $('#demoyes').onclick = () => { $('#demoask').style.display = 'none'; $('#dr').textContent = 'Removing...'; call('demoRemove').then(r => { if (!r.ok) return result($('#dr'), r); call('overview').then(o => { if (o.ok) { O = o; show(); } result($('#dr'), r); }); }); };
+    $('#demomake').onclick = () => { $('#dr').textContent = 'Making the demo fleet (up to two minutes with AI)...'; call('demo').then(r => { if (!r.ok) return result($('#dr'), r); call('overview').then(o => { if (o.ok) { O = o; show(); } result($('#dr'), r); }); }).catch(e => result($('#dr'), {ok: false, error: String(e)})); };
     $('#night').onclick = () => { $('#nr').textContent = 'Running...'; call('nightly').then(r => { result($('#nr'), r); }).catch(e => result($('#nr'), {ok: false, error: String(e)})); };
   } else if (tab === 'gauges') {
     if (G) return gaugeView();
@@ -190,7 +199,21 @@ function gaugeView() {
         ${statTable(r.stats, trend)}</div>
       <div class="card"><h2>Drive logs</h2>${table([{h: 'File', f: l => esc(l.file)}, {h: 'Received', f: l => dt(l.received)}, {h: 'Size', n: 1, f: l => num(l.size) + ' B'}, {h: 'Pieces', n: 1, f: l => esc(l.parts)},
         {h: '', f: l => `<button class="sm" data-log="${esc(l.drive_id)}">Statistics</button> <a href="https://drive.google.com/file/d/${encodeURIComponent(l.drive_id)}/view" target="_blank" rel="noopener">Open in Drive</a>`}], r.logs.slice().reverse(), {empty: 'No drive logs uploaded yet.'})}
-        <div id="ls"></div></div>`;
+        <div id="ls"></div></div>
+      <div class="card danger"><h2>Delete this gauge</h2><p class="note">Removes everything this gauge has sent: its row in Units, runs, baselines, advice, usage blocks, messages, tests,
+        emails list and its drive logs (the Drive folder goes to the bin). This cannot be undone from here. If the gauge connects again it registers as a new gauge:
+        you get the "new gauge" email, and once you approve it the owner gets a fresh welcome email and starts with empty logs.</p>
+        <label class="d">Type the serial <b style="color:var(--txt)">${esc(g.unit)}</b> to confirm<input id="delc" autocomplete="off" spellcheck="false"></label>
+        <div class="row2" style="margin-top:10px"><button id="delg" class="danger" disabled>Delete this gauge and all its data</button><span id="dg"></span></div></div>`;
+    $('#delc').oninput = () => { $('#delg').disabled = $('#delc').value.trim() !== g.unit; };
+    $('#delg').onclick = () => {
+      if ($('#delc').value.trim() !== g.unit) return;
+      $('#delg').disabled = true; $('#dg').textContent = 'Deleting...';
+      call('deleteGauge', {unit: g.unit, confirm: $('#delc').value.trim()}).then(x => {
+        if (!x.ok) { result($('#dg'), x); $('#delg').disabled = false; return; }
+        call('overview').then(o => { if (o.ok) O = o; G = null; tab = 'gauges'; show(); const n = document.createElement('p'); n.className = 'res'; n.textContent = g.unit + ' deleted: ' + x.result; $('#body').prepend(n); });
+      });
+    };
     $('#back').onclick = () => { G = null; show(); };
     $('#saveu').onclick = () => {
       const v = {}; document.querySelectorAll('[data-f]').forEach(i => { v[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.value; });
