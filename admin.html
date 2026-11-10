@@ -31,6 +31,14 @@ td.wrap{white-space:normal;min-width:220px}tr.click{cursor:pointer}tr.click:hove
 svg.sp{width:90px;height:22px;display:block}
 .msg{padding:30px 6px;color:var(--dim)}
 .row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}.seg button{border:0;border-radius:0;min-height:34px}.seg button.on{background:var(--acc);color:#1a1205}
+.bars{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.mb{background:var(--seg);border-radius:12px;padding:10px 12px 12px}.mb .t{font-size:13px;font-weight:600;margin-bottom:6px;min-height:34px}.mb .t span{font-weight:400}
+.mb .v{position:relative;height:17px;font-size:12px;font-variant-numeric:tabular-nums}.mb .v b{position:absolute;transform:translateX(-50%);color:var(--acc);white-space:nowrap}
+.mb .v .lo{position:absolute;left:0;color:var(--dim)}.mb .v .hi{position:absolute;right:0;color:var(--dim)}
+.mb .bar{position:relative;height:10px;border-radius:5px;background:#33404f;margin-top:4px}.mb .bar i{position:absolute;top:-4px;width:3px;height:18px;margin-left:-1.5px;background:var(--acc);border-radius:2px}
+.mb .bar u{position:absolute;top:2px;width:6px;height:6px;margin-left:-3px;border-radius:3px;background:#c9d2dc;opacity:.55}
+.mb .n{font-size:11px;color:var(--dim);margin-top:6px;display:flex;justify-content:space-between}
 @media (max-width:640px){.cfg{grid-template-columns:1fr}.cfg .w{grid-column:1}}
 </style></head><body><main id="m"><div class="msg">Loading...</div></main>
 <script src="config.js"></script>
@@ -72,7 +80,8 @@ function statTable(stats, trend) {
     {h: 'Max', n: 1, f: s => num(s.max)}, {h: 'First', n: 1, f: s => num(s.first)}, {h: 'Last', n: 1, f: s => num(s.last)}, {h: 'Drift', n: 1, f: s => drift(s.drift)}].concat(trend ? [{h: 'Runs', f: s => spark(trend[s.col] || [])}] : []), stats);
 }
 const yes = v => v ? '<span class="pill g">yes</span>' : '<span class="pill">no</span>';
-let O = null, tab = 'overview', G = null;
+let O = null, tab = 'overview', G = null, FV = 'table';
+try { FV = localStorage.getItem('fleetView') || 'table'; } catch (x) {}
 const TABS = [['overview', 'Overview'], ['gauges', 'Gauges'], ['fleet', 'Fleet'], ['users', 'Users'], ['emails', 'Emails'], ['advice', 'Advice'], ['tests', 'Tests'], ['config', 'Config']];
 function shell(body) {
   $('#m').innerHTML = `<div class="top"><div><h1>Admin</h1><div class="d">${esc(O ? 'Data as of ' + dt(O.now) : '')}</div></div>
@@ -120,14 +129,17 @@ function show() {
       if (!f.ok) { $('#body').innerHTML = `<p class="res err">${esc(f.error)}</p>`; return; }
       $('#body').innerHTML = `<div class="tiles"><div class="tile"><small>Approved gauges</small><b>${f.gauges}</b></div><div class="tile"><small>Their runs</small><b>${num(f.runs)}</b></div>
         <div class="tile"><small>Usage blocks</small><b>${f.blocks.length}</b><small>${f.blocks.filter(b => String(b.complete) === 'true' || b.complete === true).length} complete</small></div></div>
-        <div class="card"><h2>Each measurement across the fleet</h2><p class="note">Each gauge's average for the measurement, then the spread of those averages. Drift: newest fifth of gauges minus oldest fifth (gauge order).</p>
-        ${table([{h: 'Measurement', f: s => lab(s.col)}, {h: 'Gauges', n: 1, f: s => s.gauges}, {h: 'Min', n: 1, f: s => num(s.min)}, {h: 'Median', n: 1, f: s => num(s.p50)}, {h: 'Mean', n: 1, f: s => num(s.mean)},
+        <div class="card"><div class="row2" style="justify-content:space-between"><h2 style="margin:0">Each measurement across the fleet</h2>
+          <span class="seg"><button data-fv="table" class="${FV === 'table' ? 'on' : ''}">Table</button><button data-fv="bars" class="${FV === 'bars' ? 'on' : ''}">Bars</button></span></div>
+        <p class="note">Each gauge's average for the measurement, then the spread of those averages across the ${f.gauges} approved gauges.${FV === 'bars' ? ' Bar: lowest gauge on the left, highest on the right, orange mark = fleet mean, dots = each gauge.' : ' Drift: newest fifth of gauges minus oldest fifth (gauge order).'}</p>
+        ${FV === 'bars' ? fleetBars(f.stats) : table([{h: 'Measurement', f: s => lab(s.col)}, {h: 'Gauges', n: 1, f: s => s.gauges}, {h: 'Min', n: 1, f: s => num(s.min)}, {h: 'Median', n: 1, f: s => num(s.p50)}, {h: 'Mean', n: 1, f: s => num(s.mean)},
           {h: 'Max', n: 1, f: s => num(s.max)}, {h: 'By gauge (mean)', wrap: 1, f: s => s.by_unit.map(b => `<span class="d">${esc(nameOf(b.unit))}</span> ${num(b.mean)}`).join(' · ')}], f.stats)}</div>
         <div class="card"><h2>Comparison bands (FleetSummary)</h2>${table([{h: 'Group', f: r => esc(r.group)}, {h: 'Metric', f: r => lab(r.metric)}, {h: 'Cars', n: 1, f: r => r.cars},
           {h: '10 %', n: 1, f: r => num(r.p10)}, {h: '50 %', n: 1, f: r => num(r.p50)}, {h: '90 %', n: 1, f: r => num(r.p90)}, {h: 'Updated', f: r => dt(r.updated)}], f.fleet_summary, {empty: 'Made by the nightly job once cars have a complete 1,000 km block.'})}</div>
         <div class="card"><h2>Usage blocks</h2>${table([{h: 'Gauge', f: b => esc(nameOf(b.unit))}, {h: 'Block', n: 1, f: b => b.block}, {h: 'Runs', f: b => b.from_run + '–' + b.to_run}, {h: 'km', n: 1, f: b => num(b.km)},
           {h: 'Settled °C', n: 1, f: b => num(b.settled_c_avg)}, {h: 'Warm-up s', n: 1, f: b => num(b.warm_s_avg)}, {h: 'Crank V', n: 1, f: b => num(b.crank_v_avg)}, {h: 'Idle share', n: 1, f: b => num(b.idle_share)},
           {h: 'Short trips /1000 km', n: 1, f: b => num(b.short_trips_per_1000km)}, {h: 'Complete', f: b => yes(String(b.complete) === 'true' || b.complete === true)}], f.blocks)}</div>`;
+      document.querySelectorAll('[data-fv]').forEach(b => b.onclick = () => { FV = b.dataset.fv; try { localStorage.setItem('fleetView', FV); } catch (x) {} show(); });
     }).catch(e => { $('#body').innerHTML = `<p class="res err">${esc(e)}</p>`; });
   } else if (tab === 'users') {
     shell(`<div class="card"><h2>Owners</h2><p class="note">An owner is the email address a gauge sends. One owner can have several cars.</p>${table([{h: 'Email', f: x => esc(x.email)},
@@ -153,6 +165,16 @@ function show() {
       $('#cr').textContent = 'Saving...'; call('setConfig', {values: v}).then(r => { if (!r.ok) return result($('#cr'), r); call('overview').then(o => { if (o.ok) { O = o; show(); } result($('#cr'), r); }); });
     };
   }
+}
+// bar view: one small card per measurement, min on the left, max on the right, the mean marked with its value above
+function fleetBars(stats) {
+  if (!stats.length) return '<p class="note">No approved gauges with runs yet.</p>';
+  return `<div class="bars">${stats.map(s => {
+    const sp = s.max - s.min, x = v => sp ? Math.max(0, Math.min(100, (v - s.min) / sp * 100)) : 50, m = x(s.mean), tag = Math.max(14, Math.min(86, m));
+    return `<div class="mb"><div class="t">${esc(LABEL[s.col] || s.col)}${LABEL[s.col] ? ' <span class="d">' + esc(s.col) + '</span>' : ''}</div>
+      <div class="v"><span class="lo">${num(s.min)}</span><span class="hi">${num(s.max)}</span></div><div class="v"><b style="left:${tag.toFixed(1)}%">${num(s.mean)}</b></div>
+      <div class="bar">${s.by_unit.map(g => `<u style="left:${x(g.mean).toFixed(1)}%" title="${esc(nameOf(g.unit))}: ${num(g.mean)}"></u>`).join('')}<i style="left:${m.toFixed(1)}%"></i></div>
+      <div class="n"><span>min</span><span>${s.gauges} gauge${s.gauges === 1 ? '' : 's'} · median ${num(s.p50)}</span><span>max</span></div></div>`; }).join('')}</div>`;
 }
 const nameOf = unit => { const g = O.units.find(x => x.unit === unit); return g && g.name ? g.name : unit || '–'; };
 function status(x) { return !x.approved ? '<span class="pill a">waiting</span>' : x.key_change ? '<span class="pill a">new key</span>' : x.worst >= 2 ? '<span class="pill r">worth a look</span>' : x.worst ? '<span class="pill a">keep an eye</span>' : '<span class="pill g">fine</span>'; }
