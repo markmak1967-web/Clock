@@ -24,6 +24,7 @@ button.acc{background:var(--acc);color:#1a1205;border:0}
 .msg{padding:30px 6px;color:var(--dim)}
 .note{color:var(--dim);font-size:13px}svg{display:block;width:100%;height:56px}
 a{color:#58a6ff}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.chk input{width:22px;height:22px;margin-top:2px;flex:none}
 </style></head><body><main id="m"></main>
 <script src="config.js"></script>
 <script>
@@ -81,14 +82,17 @@ function render() {
     <p class="note">This describes wear on the car (it helps choose service intervals), not how well anyone drives.</p></div>`;
   const L = D.life;
   html += `<div class="card"><h2>Engine life since the gauge was fitted</h2><div class="kv"><div><small>Engine hours</small><b>${fmt(L.eng_h)}</b></div><div><small>Revolutions</small><b>${fmt(L.revs_m)} million</b></div>
-    <div><small>Starts</small><b>${esc(L.starts || '–')}</b></div><div><small>Runs</small><b>${esc(L.runs || '–')}</b></div></div></div>`;
+    <div><small>Starts</small><b>${esc(L.starts || '–')}</b></div><div><small>Runs</small><b>${esc(L.runs || '–')}</b></div>${D.odo ? `<div><small>Odometer (estimate)</small><b>${Number(D.odo.shown).toLocaleString()} ${D.odo.unit === 'mi' ? 'miles' : 'km'}</b></div>` : ''}</div>
+    ${D.odo ? '' : '<p class="note">Add the odometer reading on the gauge page (Setup, Car and engine) to see the mileage here.</p>'}</div>`;
   html += `<div class="card"><h2>Your data</h2><p class="note">Your gauge sends run summaries, alerts and baseline checks. It never sends where the car is.</p>
     <p><a href="${esc(D.csv)}">Download all my run summaries</a></p>
+    <label class="chk"><input type="checkbox" id="news" ${D.news ? 'checked' : ''}> <span><b>State of the Fleet emails</b><br><span class="note">Once a month: fleet mileage, the work done across the fleet, and things to check on MGFs of this age. Only fleet totals, never another car's details.</span></span></label>
     <p><button id="pause">${D.paused ? 'Start the advice emails again' : 'Pause the advice emails'}</button></p>
     <p><button id="del">Delete my data</button></p>
     <p class="note">To stop sending altogether, untick "Send my data" on the gauge page.</p></div>`;
   $('#m').innerHTML = html;
   document.querySelectorAll('select[data-id]').forEach(s => s.onchange = () => call({api: 'status', t: TOKEN, id: s.dataset.id, s: s.value}).then(r => { if (!r.ok) alert('Not saved'); }).catch(() => alert('Not saved: no connection')));
+  $('#news').onchange = e => call({api: 'req', t: TOKEN, k: e.target.checked ? 'news_on' : 'news_off'}).then(r => { if (r.ok) D.news = e.target.checked; else { e.target.checked = !e.target.checked; alert('Not saved'); } }).catch(() => { e.target.checked = !e.target.checked; alert('Not saved: no connection'); });
   $('#pause').onclick = () => call({api: 'req', t: TOKEN, k: D.paused ? 'resume' : 'pause'}).then(r => { if (r.ok) { D.paused = !D.paused; render(); } });
   $('#del').onclick = () => { if (confirm('Delete all of this car\'s data from the sheet? This cannot be undone. Your page link will stop working.')) call({api: 'req', t: TOKEN, k: 'delete'}).then(r => { if (r.ok) $('#m').innerHTML = '<h1>Deleted</h1><p>Your data has been removed. Untick "Send my data" on the gauge page so nothing more is sent.</p>'; }); };
 }

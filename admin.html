@@ -109,11 +109,24 @@ function show() {
       <div class="card"><h2>Recent tests and uploads</h2>${testTable(O.tests.slice(0, 8))}</div>
       <div class="card"><h2>Sheet tabs</h2><div class="row2">${Object.keys(c).map(k => `<span class="pill">${esc(k)} ${c[k] == null ? 'missing' : c[k]}</span>`).join(' ')}</div>
       <div class="row2" style="margin-top:12px"><button id="night">Run the nightly job now</button><span class="d">Usage blocks, fleet bands, rule and AI advice, advice emails. Takes up to a minute.</span></div><div id="nr"></div></div>
+      <div class="card"><h2>State of the Fleet email</h2><p class="note">${u.filter(x => x.news && x.approved && x.email).length} owner(s) opted in (State of the Fleet emails tick box on their page).
+        ${(O.config.find(c => c.key === 'FLEET_NEWS') || {}).value === 'monthly' ? 'Sent automatically on day ' + esc((O.config.find(c => c.key === 'FLEET_NEWS_DAY') || {}).value || 1) + ' of each month.' : 'Manual: nothing goes out until you press Send (set FLEET_NEWS to monthly in Config to automate it).'}</p>
+        <div class="row2"><button id="nprev">Preview</button><button id="ntest">Send me a test</button><button id="nsend" class="acc">Send to opted-in owners</button></div>
+        <div id="nask" style="display:none;margin-top:10px" class="row2"><span id="nasktxt"></span><button id="nyes" class="danger">Yes, send it</button><button id="nno">Cancel</button></div>
+        <div id="nr2"></div><iframe id="nframe" title="Email preview" style="display:none;width:100%;height:720px;border:0;border-radius:12px;margin-top:10px;background:#eceff3"></iframe></div>
       <div class="card"><h2>Demo fleet</h2><p class="note">${u.filter(x => /^MGF-DEMO/.test(x.unit)).length ? u.filter(x => /^MGF-DEMO/.test(x.unit)).length + ' demo cars in the sheet (demo1 to demo5).' : 'No demo cars in the sheet.'}
         Making it replaces any demo cars already there and sends demo1's two emails; with an AI key it asks for five AI reviews (up to a minute or two).</p>
         <div class="row2"><button id="demomake">Make the demo fleet</button><button id="demorm" class="danger">Remove the demo fleet</button></div>
         <div id="demoask" style="display:none;margin-top:10px" class="row2"><span>Remove all five demo cars and their drive logs?</span><button id="demoyes" class="danger">Yes, remove them</button><button id="demono">Cancel</button></div><div id="dr"></div></div>`);
     document.querySelectorAll('tr.click').forEach(bindGauge);
+    $('#nprev').onclick = () => { $('#nr2').textContent = 'Building the preview...'; call('newsPreview').then(r => { if (!r.ok) return result($('#nr2'), r);
+      $('#nr2').className = 'note'; $('#nr2').textContent = 'Preview for ' + nameOf(r.for_unit) + ' (each owner gets their own car line) · ' + r.month + ' · ' + r.recipients + ' recipient(s)';
+      const f = $('#nframe'); f.style.display = 'block'; f.srcdoc = r.html; }); };
+    $('#ntest').onclick = () => { $('#nr2').textContent = 'Sending...'; call('newsTest').then(r => result($('#nr2'), r)); };
+    $('#nsend').onclick = () => { const n = u.filter(x => x.news && x.approved && x.email).length; if (!n) { result($('#nr2'), {ok: false, error: 'Nobody has opted in yet'}); return; }
+      $('#nasktxt').textContent = 'Send this month\'s State of the Fleet email to ' + n + ' owner(s)?'; $('#nask').style.display = 'flex'; };
+    $('#nno').onclick = () => { $('#nask').style.display = 'none'; };
+    $('#nyes').onclick = () => { $('#nask').style.display = 'none'; $('#nr2').textContent = 'Sending...'; call('newsSend', {confirm: 'SEND'}).then(r => result($('#nr2'), r)); };
     $('#demorm').onclick = () => { $('#demoask').style.display = 'flex'; };
     $('#demono').onclick = () => { $('#demoask').style.display = 'none'; };
     $('#demoyes').onclick = () => { $('#demoask').style.display = 'none'; $('#dr').textContent = 'Removing...'; call('demoRemove').then(r => { if (!r.ok) return result($('#dr'), r); call('overview').then(o => { if (o.ok) { O = o; show(); } result($('#dr'), r); }); }); };
@@ -182,7 +195,8 @@ function gaugeTable(list) {
   window._gl = list;
   return table([{h: 'Car', f: x => `<b>${esc(x.name || '(no name)')}</b><div class="d">${esc(x.unit)}</div>`}, {h: 'Status', f: status}, {h: 'Car details', f: x => esc([x.year, x.model, x.engine, x.ecu ? 'MEMS ' + x.ecu : ''].filter(Boolean).join(' '))},
     {h: 'Owner', f: x => esc(x.email || '–')}, {h: 'Firmware', f: x => esc(x.fw)}, {h: 'Last seen', f: x => ago(x.last_seen)}, {h: 'Runs', n: 1, f: x => x.runs}, {h: 'Open advice', n: 1, f: x => x.open},
-    {h: 'AI', f: x => yes(x.ai)}, {h: 'Emails', f: x => x.paused ? '<span class="pill a">paused</span>' : yes(!!x.email)}], list, {click: 1});
+    {h: 'Odometer', n: 1, f: x => x.odo ? Number(x.odo.shown).toLocaleString() + ' ' + x.odo.unit : '–'},
+    {h: 'AI', f: x => yes(x.ai)}, {h: 'Emails', f: x => x.paused ? '<span class="pill a">paused</span>' : yes(!!x.email)}, {h: 'Fleet email', f: x => yes(x.news)}], list, {click: 1});
 }
 function bindGauge(tr) { tr.onclick = () => { G = window._gl[Number(tr.dataset.i)].unit; tab = 'gauges'; show(); }; }
 function adviceTable(list) {
