@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Approve a gauge - The Clock</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b0d10;color:#eef2f6;font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:24px 16px 60px}h1{font-size:24px;margin:0 0 4px}.d{color:#8b95a3;font-size:14px}
+.card{background:#161a20;border-radius:18px;padding:6px 16px;margin:16px 0}.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #262c35}.row:first-child{border-top:0}
+.row span{color:#8b95a3}.row b{text-align:right;word-break:break-word}
+button{width:100%;min-height:56px;border:0;border-radius:14px;background:#2ea043;color:#fff;font-weight:700;font-size:18px;font-family:inherit}button:disabled{opacity:.5}
+.res{border-radius:14px;padding:14px;margin-top:14px;font-weight:600}.g{background:#12301d;color:#3ccf7e}.r{background:#3a1515;color:#ff6b6b}
+</style></head><body><main id="m"><p class="d">Loading...</p></main>
+<script src="config.js"></script>
+<script>
+addEventListener('hashchange', () => location.reload());
+const [U, K] = decodeURIComponent(location.hash.slice(1)).split('.'), m = document.getElementById('m');
+const esc = s => String(s == null || s === '' ? '–' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const call = q => fetch(window.CLOCK.sheet + '?' + new URLSearchParams(q), {cache: 'no-store'}).then(r => r.json());
+function show(g, note) {
+  const rows = [['Gauge (serial)', g.unit], ['Car name', g.name], ['Car', [g.year, g.model, g.engine].filter(Boolean).join(' ')], ['Engine computer', g.ecu],
+    ['Owner email', g.email], ['Firmware', g.fw], ['Sent through', g.net], ['Registered', g.registered ? new Date(g.registered).toLocaleString() : ''], ['Runs so far', g.runs]];
+  m.innerHTML = `<h1>${g.key_change ? 'Gauge with a new key' : 'Approve a gauge'}</h1><div class="d">${g.key_change ? 'This gauge was full-flashed or replaced and signs with a new key. Approve only if you expected that.' : 'Approving lets this gauge\'s data into advice, emails and the fleet comparison, and sends the owner the welcome email.'}</div>
+    <div class="card">${rows.map(r => `<div class="row"><span>${r[0]}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
+    ${g.approved && !g.key_change ? '' : '<button id="ap">Approve this gauge</button>'}${note || (g.approved && !g.key_change ? '<div class="res g">Approved</div>' : '')}`;
+  const b = document.getElementById('ap');
+  if (b) b.onclick = () => { b.disabled = true; b.textContent = 'Approving...';
+    call({api: 'approve', u: U, k: K}).then(r => r.ok ? show(r.gauge, `<div class="res g">Approved.${r.welcomed ? ' The owner has been sent the welcome email.' : ' No owner email yet: the welcome email goes when the gauge sends one.'}</div>`)
+      : show(Object.assign({}, r.gauge || {unit: U}), `<div class="res r">${esc(r.error)}</div>`)).catch(() => { b.disabled = false; b.textContent = 'Approve this gauge'; alert('No connection'); }); };
+}
+if (!U || !K) m.innerHTML = '<p>Open this page from the "Review and approve" button in the new gauge email.</p>';
+else call({api: 'gauge', u: U, k: K}).then(r => r.ok ? show(r.gauge) : (m.innerHTML = '<p>' + esc(r.error) + '</p>')).catch(() => { m.innerHTML = '<p>Could not reach the sheet. Check your connection and reload.</p>'; });
+</script></body></html>
