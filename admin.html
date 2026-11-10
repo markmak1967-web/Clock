@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Admin - The Clock</title>
+<style>
+:root{--bg:#0b0d10;--card:#161a20;--line:#262c35;--txt:#eef2f6;--dim:#8b95a3;--acc:#f2a33a;--ok:#3ccf7e;--amb:#f2c53a;--red:#ff4d4d;--seg:#20252d;--blue:#5b7cfa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:16px 16px 60px}
+h1{font-size:22px;margin:0}h2{font-size:17px;margin:0 0 10px}h3{font-size:15px;margin:14px 0 6px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.d,.note{color:var(--dim);font-size:13px}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2}
+nav button{min-height:38px}nav button.on{background:var(--acc);color:#1a1205;border-color:var(--acc)}
+button,select,input,textarea{font:600 14px inherit;font-family:inherit;min-height:40px;border-radius:10px;border:1px solid var(--line);background:var(--seg);color:var(--txt);padding:0 12px}
+input,textarea{font-weight:400;width:100%}textarea{padding:8px 12px;min-height:64px}
+button{cursor:pointer}button.acc{background:var(--acc);color:#1a1205;border:0}button.sm{min-height:30px;padding:0 9px;font-size:13px}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--card);border-radius:14px;padding:12px}.tile small{display:block;color:var(--dim);font-size:12px}.tile b{font-size:24px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+th{color:var(--dim);font-weight:600}a{color:#58a6ff}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td.wrap{white-space:normal;min-width:220px}tr.click{cursor:pointer}tr.click:hover td{background:#1c2129}
+.pill{display:inline-block;padding:1px 8px;border-radius:9px;font-size:12px;font-weight:600;background:#2a313b}
+.pill.g{background:#173b29;color:var(--ok)}.pill.a{background:#3d3412;color:var(--amb)}.pill.r{background:#401a1a;color:#ff8080}.pill.b{background:#1f2747;color:#9fb1ff}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 14px}
+.form label{display:block;font-size:12px;color:var(--dim)}.form .chk{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--txt);min-height:40px}
+.form .chk input{width:22px;min-height:22px}
+.cfg{display:grid;grid-template-columns:200px 1fr;gap:6px 14px;align-items:start}.cfg .k{font-weight:600;padding-top:9px;word-break:break-all}.cfg .w{grid-column:2;color:var(--dim);font-size:12px;margin:-2px 0 8px}
+.res{margin-top:8px;font-size:14px;color:var(--ok)}.res.err{color:#ff8080}
+.up{color:var(--amb)}.down{color:#7fb6ff}
+svg.sp{width:90px;height:22px;display:block}
+.msg{padding:30px 6px;color:var(--dim)}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:640px){.cfg{grid-template-columns:1fr}.cfg .w{grid-column:1}}
+</style></head><body><main id="m"><div class="msg">Loading...</div></main>
+<script src="config.js"></script>
+<script>
+addEventListener('hashchange', () => location.reload());
+const KEY = decodeURIComponent(location.hash.slice(1)), API = window.CLOCK.sheet;
+const $ = s => document.querySelector(s), esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+// every call is a POST of plain text (no browser pre-flight); the key travels in the body, never in the address
+const call = (a, extra) => fetch(API + '?admin=1', {method: 'POST', body: JSON.stringify(Object.assign({k: KEY, a}, extra || {}))}).then(r => r.json());
+function ago(t) { if (!t) return 'never'; const s = (Date.now() - new Date(t)) / 1000; if (isNaN(s)) return esc(t); return s < 90 ? 'just now' : s < 7200 ? Math.round(s / 60) + ' min ago' : s < 172800 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; }
+function dt(t) { const d = new Date(t); return t && !isNaN(d) ? d.toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}) : esc(t); }
+function num(v) { if (v == null || v === '') return '–'; const n = Number(v); if (isNaN(n)) return esc(v); const a = Math.abs(n); if (Number.isInteger(n) && a < 1e6) return n.toLocaleString(); return a >= 1e6 ? (n / 1e6).toFixed(2) + ' M' : a >= 1000 ? Math.round(n).toLocaleString() : a >= 100 ? n.toFixed(0) : a >= 10 ? n.toFixed(1) : n.toFixed(2).replace(/\.?0+$/, '') || '0'; }
+function drift(v) { if (v == null) return '–'; const n = Number(v); if (!n) return '0'; return `<span class="${n > 0 ? 'up' : 'down'}">${n > 0 ? '▲' : '▼'} ${num(Math.abs(n))}</span>`; }
+function spark(vals) {
+  const p = vals.map((x, i) => [i, x]).filter(q => q[1] != null && isFinite(q[1])); if (p.length < 2) return '';
+  const ys = p.map(q => q[1]), lo = Math.min(...ys), hi = Math.max(...ys), sp = hi - lo || 1, n = vals.length - 1 || 1;
+  return `<svg class="sp" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline fill="none" stroke="#f2a33a" stroke-width="1.6" points="${p.map(q => (q[0] / n * 90).toFixed(1) + ',' + (20 - (q[1] - lo) / sp * 18).toFixed(1)).join(' ')}"/></svg>`;
+}
+// plain names for the run-record columns (anything not listed shows its column name)
+const LABEL = {settled_c: 'Settled coolant °C', warm_s: 'Warm-up s', peak_coolant: 'Peak coolant °C', peak_bay: 'Peak engine bay °C', coolant_start: 'Coolant at start °C', iat_start: 'Intake air at start °C',
+  crank_ms: 'Crank time ms', crank_min_v: 'Lowest V while starting', failed_starts: 'Failed starts', batt_run_v: 'Battery V, warm', min_v_run: 'Lowest V while running', run_s: 'Run length s',
+  dist_km: 'Distance km', revs: 'Revolutions', s_idle: 'Idling s', s_rpm_5500: 's above 5,500 rpm', s_rpm_high: 's near the limiter', s_load_full: 's at full load', brake_03: 'Stops ≥0.3 g',
+  brake_05: 'Firm stops ≥0.5 g', brake_07: 'Hard stops ≥0.7 g', impacts: 'Road impacts', idle_valve_warm: 'Idle valve, warm idle', trend_ltft: 'Long-term trim %', trend_stft: 'Short-term trim %',
+  idle_lambda_per_min: 'O2 switches / min at idle', new_faults: 'New faults', fault_mask: 'Fault code', n_coolant_amber: 'Coolant amber events', n_volt_high: 'High-voltage events', n_volt_low: 'Low-voltage events',
+  life_eng_h: 'Engine hours (lifetime)', start_eng_h: 'Engine hours at start', never_warm: 'Never warmed up', hot_shutdown: 'Hot switch-off', idle_rpm_warm: 'Idle rpm, warm', fan1_cycles: 'Fan 1 cycles', fan2_cycles: 'Fan 2 cycles',
+  trend_rpm: 'Cruise rpm', trend_map: 'Cruise MAP kPa', trend_coolant: 'Cruise coolant °C', trend_iat: 'Cruise intake °C', n_overrev: 'Over-rev events', n_bay: 'Bay heat events',
+  rpm: 'Engine rpm', coolant_c: 'Coolant °C', iat_c: 'Intake air °C', bay_c: 'Engine bay °C', map_kpa: 'MAP kPa', battery_v: 'Battery V', throttle_v: 'Throttle V', throttle_deg: 'Throttle °', advance_deg: 'Advance °',
+  coil_us: 'Coil dwell µs', idle_valve: 'Idle valve', idle_setpoint: 'Idle setpoint', lambda_mv: 'O2 sensor mV', stft: 'Short-term trim %', ltft: 'Long-term trim %', closed_loop: 'Closed loop', fan1: 'Fan 1', fan2: 'Fan 2',
+  gps_kmh: 'Speed km/h', lat_g: 'Side g', lon_g: 'Fore-aft g', oil_c: 'Oil °C', t_s: 'Time s'};
+const lab = c => LABEL[c] ? `${esc(LABEL[c])} <span class="d">${esc(c)}</span>` : esc(c);
+function table(cols, rows, opts) {
+  opts = opts || {};
+  if (!rows.length) return `<p class="note">${opts.empty || 'Nothing yet.'}</p>`;
+  return `<div class="scroll"><table><thead><tr>${cols.map(c => `<th class="${c.n ? 'n' : ''}">${c.h}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) =>
+    `<tr${opts.click ? ` class="click" data-i="${i}"` : ''}>${cols.map(c => `<td class="${c.n ? 'n' : ''}${c.wrap ? ' wrap' : ''}">${c.f(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function statTable(stats, trend) {
+  return table([{h: 'Measurement', f: s => lab(s.col)}, {h: 'n', n: 1, f: s => num(s.n)}, {h: 'Min', n: 1, f: s => num(s.min)}, {h: 'Median', n: 1, f: s => num(s.p50)}, {h: 'Mean', n: 1, f: s => num(s.mean)},
+    {h: 'Max', n: 1, f: s => num(s.max)}, {h: 'First', n: 1, f: s => num(s.first)}, {h: 'Last', n: 1, f: s => num(s.last)}, {h: 'Drift', n: 1, f: s => drift(s.drift)}].concat(trend ? [{h: 'Runs', f: s => spark(trend[s.col] || [])}] : []), stats);
+}
+const yes = v => v ? '<span class="pill g">yes</span>' : '<span class="pill">no</span>';
+let O = null, tab = 'overview', G = null;
+const TABS = [['overview', 'Overview'], ['gauges', 'Gauges'], ['fleet', 'Fleet'], ['users', 'Users'], ['emails', 'Emails'], ['advice', 'Advice'], ['tests', 'Tests'], ['config', 'Config']];
+function shell(body) {
+  $('#m').innerHTML = `<div class="top"><div><h1>Admin</h1><div class="d">${esc(O ? 'Data as of ' + dt(O.now) : '')}</div></div>
+    <div class="row2"><button id="reload" class="sm">Reload</button></div></div>
+    <nav>${TABS.map(t => `<button data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</nav><div id="body">${body}</div>`;
+  document.querySelectorAll('nav button').forEach(b => b.onclick = () => { tab = b.dataset.t; G = null; show(); });
+  $('#reload').onclick = load;
+}
+function result(el, r) { el.className = 'res' + (r.ok ? '' : ' err'); el.textContent = r.ok ? (r.result || 'Done') : r.error; }
+function show() {
+  const u = O.units, c = O.counts;
+  if (tab === 'overview') {
+    const waiting = u.filter(x => !x.approved || x.key_change), att = u.filter(x => x.approved && x.worst >= 2);
+    shell(`<div class="tiles">
+      <div class="tile"><small>Gauges</small><b>${u.length}</b><small>${u.filter(x => x.approved).length} approved</small></div>
+      <div class="tile"><small>Waiting for approval</small><b style="color:${waiting.length ? 'var(--amb)' : ''}">${waiting.length}</b></div>
+      <div class="tile"><small>Owners (emails)</small><b>${O.users.length}</b></div>
+      <div class="tile"><small>Runs</small><b>${num(c.Runs)}</b></div>
+      <div class="tile"><small>Open advice</small><b>${u.reduce((s, x) => s + x.open, 0)}</b></div>
+      <div class="tile"><small>Drive logs</small><b>${num(c.Logs)}</b></div>
+      <div class="tile"><small>Emails sent</small><b>${num(c.Emails)}</b><small>${O.quota != null ? O.quota + ' left today' : ''}</small></div>
+      <div class="tile"><small>AI on</small><b>${u.filter(x => x.ai).length}</b><small>${O.config.find(x => x.key === 'AI_KEY' && x.value) ? 'key set' : 'no AI_KEY'}</small></div></div>
+      ${waiting.length ? `<div class="card"><h2>Waiting for you</h2>${gaugeTable(waiting)}</div>` : ''}
+      ${att.length ? `<div class="card"><h2>Worth a look</h2>${gaugeTable(att)}</div>` : ''}
+      <div class="card"><h2>Recent tests and uploads</h2>${testTable(O.tests.slice(0, 8))}</div>
+      <div class="card"><h2>Sheet tabs</h2><div class="row2">${Object.keys(c).map(k => `<span class="pill">${esc(k)} ${c[k] == null ? 'missing' : c[k]}</span>`).join(' ')}</div>
+      <div class="row2" style="margin-top:12px"><button id="night">Run the nightly job now</button><span class="d">Usage blocks, fleet bands, rule and AI advice, advice emails. Takes up to a minute.</span></div><div id="nr"></div></div>`);
+    document.querySelectorAll('tr.click').forEach(bindGauge);
+    $('#night').onclick = () => { $('#nr').textContent = 'Running...'; call('nightly').then(r => { result($('#nr'), r); }).catch(e => result($('#nr'), {ok: false, error: String(e)})); };
+  } else if (tab === 'gauges') {
+    if (G) return gaugeView();
+    shell(`<div class="card"><h2>Gauges</h2><p class="note">Tap a gauge for its settings, measurement statistics and drive logs.</p>${gaugeTable(u)}</div>`);
+    document.querySelectorAll('tr.click').forEach(bindGauge);
+  } else if (tab === 'fleet') {
+    shell('<div class="msg">Working out fleet statistics...</div>');
+    call('fleet').then(f => {
+      if (!f.ok) { $('#body').innerHTML = `<p class="res err">${esc(f.error)}</p>`; return; }
+      $('#body').innerHTML = `<div class="tiles"><div class="tile"><small>Approved gauges</small><b>${f.gauges}</b></div><div class="tile"><small>Their runs</small><b>${num(f.runs)}</b></div>
+        <div class="tile"><small>Usage blocks</small><b>${f.blocks.length}</b><small>${f.blocks.filter(b => String(b.complete) === 'true' || b.complete === true).length} complete</small></div></div>
+        <div class="card"><h2>Each measurement across the fleet</h2><p class="note">Each gauge's average for the measurement, then the spread of those averages. Drift: newest fifth of gauges minus oldest fifth (gauge order).</p>
+        ${table([{h: 'Measurement', f: s => lab(s.col)}, {h: 'Gauges', n: 1, f: s => s.gauges}, {h: 'Min', n: 1, f: s => num(s.min)}, {h: 'Median', n: 1, f: s => num(s.p50)}, {h: 'Mean', n: 1, f: s => num(s.mean)},
+          {h: 'Max', n: 1, f: s => num(s.max)}, {h: 'By gauge (mean)', wrap: 1, f: s => s.by_unit.map(b => `<span class="d">${esc(nameOf(b.unit))}</span> ${num(b.mean)}`).join(' · ')}], f.stats)}</div>
+        <div class="card"><h2>Comparison bands (FleetSummary)</h2>${table([{h: 'Group', f: r => esc(r.group)}, {h: 'Metric', f: r => lab(r.metric)}, {h: 'Cars', n: 1, f: r => r.cars},
+          {h: '10 %', n: 1, f: r => num(r.p10)}, {h: '50 %', n: 1, f: r => num(r.p50)}, {h: '90 %', n: 1, f: r => num(r.p90)}, {h: 'Updated', f: r => dt(r.updated)}], f.fleet_summary, {empty: 'Made by the nightly job once cars have a complete 1,000 km block.'})}</div>
+        <div class="card"><h2>Usage blocks</h2>${table([{h: 'Gauge', f: b => esc(nameOf(b.unit))}, {h: 'Block', n: 1, f: b => b.block}, {h: 'Runs', f: b => b.from_run + '–' + b.to_run}, {h: 'km', n: 1, f: b => num(b.km)},
+          {h: 'Settled °C', n: 1, f: b => num(b.settled_c_avg)}, {h: 'Warm-up s', n: 1, f: b => num(b.warm_s_avg)}, {h: 'Crank V', n: 1, f: b => num(b.crank_v_avg)}, {h: 'Idle share', n: 1, f: b => num(b.idle_share)},
+          {h: 'Short trips /1000 km', n: 1, f: b => num(b.short_trips_per_1000km)}, {h: 'Complete', f: b => yes(String(b.complete) === 'true' || b.complete === true)}], f.blocks)}</div>`;
+    }).catch(e => { $('#body').innerHTML = `<p class="res err">${esc(e)}</p>`; });
+  } else if (tab === 'users') {
+    shell(`<div class="card"><h2>Owners</h2><p class="note">An owner is the email address a gauge sends. One owner can have several cars.</p>${table([{h: 'Email', f: x => esc(x.email)},
+      {h: 'Gauges', wrap: 1, f: x => x.units.map(n => esc(nameOf(n)) + ' <span class="d">' + esc(n) + '</span>').join('<br>')}, {h: 'Last seen', f: x => ago(x.last_seen)}, {h: 'Emails sent', n: 1, f: x => x.emails}], O.users)}</div>`);
+  } else if (tab === 'emails') {
+    shell(`<div class="card"><h2>Emails sent</h2><p class="note">Every email the sheet sends is listed here (from this version on). ${O.quota != null ? O.quota + ' more can go today (Google limit).' : ''}</p>${table([{h: 'Sent', f: e => dt(e.sent_at)},
+      {h: 'Kind', f: e => `<span class="pill ${/admin/.test(e.kind) ? 'b' : e.kind === 'advice' ? 'a' : 'g'}">${esc(e.kind)}</span>`}, {h: 'To', f: e => esc(e.to)}, {h: 'Gauge', f: e => esc(nameOf(e.unit))}, {h: 'Subject', wrap: 1, f: e => esc(e.subject)}], O.emails)}</div>`);
+  } else if (tab === 'advice') {
+    shell(`<div class="card"><h2>Advice</h2>${adviceTable(O.advice)}</div>`);
+  } else if (tab === 'tests') {
+    shell(`<div class="card"><h2>Tests, uploads and AI reviews</h2>${testTable(O.tests)}</div>
+      <div class="card"><h2>Messages queued for gauges</h2>${table([{h: 'Created', f: m => dt(m.created)}, {h: 'Gauge', f: m => esc(nameOf(m.unit))}, {h: 'Kind', f: m => esc(m.kind)}, {h: 'Text', wrap: 1, f: m => esc(m.text)}, {h: 'Delivered', f: m => m.delivered_at ? dt(m.delivered_at) : '<span class="pill a">waiting</span>'}], O.messages)}</div>
+      <div class="card"><h2>Owner requests</h2>${table([{h: 'Created', f: m => dt(m.created)}, {h: 'Gauge', f: m => esc(m.unit)}, {h: 'Kind', f: m => esc(m.kind)}, {h: 'Detail', wrap: 1, f: m => esc(m.detail)}, {h: 'Done', f: m => esc(m.done)}], O.requests)}</div>`);
+  } else if (tab === 'config') {
+    shell(`<div class="card"><h2>Config</h2><p class="note">The Config tab of the sheet. Only changed boxes are saved. Secret values show their last 4 characters: leave a secret box empty to keep it.</p>
+      <div class="cfg">${O.config.map(r => `<div class="k">${esc(r.key)}${r.missing ? ' <span class="pill a">new</span>' : ''}</div>
+        <input data-k="${esc(r.key)}" ${r.secret ? `type="password" placeholder="${esc(r.value || 'not set')} (leave empty to keep)" value=""` : `value="${esc(r.value)}"`} data-o="${r.secret ? '' : esc(r.value)}" autocomplete="off"><div class="w">${esc(r.what)}</div>`).join('')}</div>
+      <div class="row2" style="margin-top:12px"><button class="acc" id="savecfg">Save changes</button><span id="cr"></span></div></div>`);
+    $('#savecfg').onclick = () => {
+      const v = {}; document.querySelectorAll('input[data-k]').forEach(i => { if (i.value !== i.dataset.o && !(i.type === 'password' && !i.value)) v[i.dataset.k] = i.value; });
+      if (!Object.keys(v).length) { $('#cr').textContent = 'Nothing changed'; return; }
+      if (v.ADMIN_KEY && !confirm('Changing ADMIN_KEY makes this link stop working. You will need the new key to come back. Continue?')) return;
+      $('#cr').textContent = 'Saving...'; call('setConfig', {values: v}).then(r => { if (!r.ok) return result($('#cr'), r); call('overview').then(o => { if (o.ok) { O = o; show(); } result($('#cr'), r); }); });
+    };
+  }
+}
+const nameOf = unit => { const g = O.units.find(x => x.unit === unit); return g && g.name ? g.name : unit || '–'; };
+function status(x) { return !x.approved ? '<span class="pill a">waiting</span>' : x.key_change ? '<span class="pill a">new key</span>' : x.worst >= 2 ? '<span class="pill r">worth a look</span>' : x.worst ? '<span class="pill a">keep an eye</span>' : '<span class="pill g">fine</span>'; }
+function gaugeTable(list) {
+  window._gl = list;
+  return table([{h: 'Car', f: x => `<b>${esc(x.name || '(no name)')}</b><div class="d">${esc(x.unit)}</div>`}, {h: 'Status', f: status}, {h: 'Car details', f: x => esc([x.year, x.model, x.engine, x.ecu ? 'MEMS ' + x.ecu : ''].filter(Boolean).join(' '))},
+    {h: 'Owner', f: x => esc(x.email || '–')}, {h: 'Firmware', f: x => esc(x.fw)}, {h: 'Last seen', f: x => ago(x.last_seen)}, {h: 'Runs', n: 1, f: x => x.runs}, {h: 'Open advice', n: 1, f: x => x.open},
+    {h: 'AI', f: x => yes(x.ai)}, {h: 'Emails', f: x => x.paused ? '<span class="pill a">paused</span>' : yes(!!x.email)}], list, {click: 1});
+}
+function bindGauge(tr) { tr.onclick = () => { G = window._gl[Number(tr.dataset.i)].unit; tab = 'gauges'; show(); }; }
+function adviceTable(list) {
+  return table([{h: 'Created', f: a => dt(a.created)}, {h: 'Gauge', f: a => esc(nameOf(a.unit))}, {h: 'Source', f: a => `<span class="pill ${a.source === 'ai' ? 'b' : ''}">${esc(a.source)}</span>`}, {h: 'System', f: a => esc(a.system)},
+    {h: 'Advice', wrap: 1, f: a => `<b>${esc(a.title)}</b><div class="d">${esc(a.text)}</div>`}, {h: 'Status', f: a => esc(a.status)}, {h: 'Emailed', f: a => a.emailed ? dt(a.emailed) : '–'}], list);
+}
+function testTable(list) {
+  return table([{h: 'When', f: t => dt(t.received_at)}, {h: 'Gauge', f: t => esc(nameOf(t.unit))}, {h: 'Kind', f: t => `<span class="pill ${/fail/i.test(t.kind) ? 'r' : /AI/.test(t.kind) ? 'b' : ''}">${esc(t.kind)}</span>`},
+    {h: 'Firmware', f: t => esc(t.fw)}, {h: 'Memory kB (min)', n: 1, f: t => t.mem_int_kb !== '' && t.mem_int_kb != null ? esc(t.mem_int_kb) + ' (' + esc(t.mem_int_min_kb) + ')' : ''}, {h: 'Detail', wrap: 1, f: t => esc(t.detail)}], list);
+}
+function gaugeView() {
+  shell('<div class="msg">Loading the gauge...</div>');
+  call('gauge', {unit: G}).then(r => {
+    if (!r.ok) { $('#body').innerHTML = `<p class="res err">${esc(r.error)}</p>`; return; }
+    const g = r.gauge, b = v => v === true || String(v).toUpperCase() === 'TRUE', trend = {};
+    r.runs.forEach(x => Object.keys(x).forEach(k => { (trend[k] = trend[k] || []).push(x[k] === '' ? null : Number(x[k])); }));
+    const ai = r.ai_last;
+    $('#body').innerHTML = `<p><button class="sm" id="back">← All gauges</button></p>
+      <div class="card"><h2>${esc(g.car_name || '(no name)')} <span class="d">${esc(g.unit)}</span></h2>
+        <div class="d">Registered ${dt(g.registered_at)} · last seen ${ago(g.last_seen)} via ${esc(g.last_net || '–')} · firmware ${esc(g.fw || '–')} · key ${esc(g.key)}${g.pending_key ? ' · <b class="up">new key waiting (' + esc(g.pending_key) + ')</b>' : ''}</div>
+        <div class="d">Lifetime ${num(g.life_eng_h)} engine h · ${num(g.life_revs_m)} M revs · ${esc(g.life_starts || 0)} starts · ${esc(g.life_runs || 0)} runs · welcome email ${g.welcomed_at ? dt(g.welcomed_at) : 'not sent'}</div>
+        <h3>Settings</h3>
+        <div class="form">
+          <label class="chk"><input type="checkbox" data-f="approved" ${b(g.approved) ? 'checked' : ''}> Approved</label>
+          <label class="chk"><input type="checkbox" data-f="ai" ${b(g.ai) ? 'checked' : ''}> AI suggestions</label>
+          <label class="chk"><input type="checkbox" data-f="emails_paused" ${b(g.emails_paused) ? 'checked' : ''}> Emails paused</label>
+          ${[['car_name', 'Car name'], ['email', 'Owner email'], ['year', 'Year'], ['model', 'Model'], ['engine', 'Engine'], ['ecu', 'Engine computer (1.9 or 2J)']].map(f => `<label>${f[1]}<input data-f="${f[0]}" value="${esc(g[f[0]])}"></label>`).join('')}
+        </div>
+        <label class="d" style="display:block;margin-top:10px">Notes<textarea data-f="notes">${esc(g.notes)}</textarea></label>
+        <p class="note">The gauge sends car details, owner email and the AI choice with each upload, so a change here lasts until the owner changes it on the gauge.</p>
+        <div class="row2"><button class="acc" id="saveu">Save</button><button id="runai">Run an AI review now</button><span id="ur"></span></div>
+        <p class="note">AI review: ${ai ? dt(ai.when) + ' · ' + esc(ai.kind) + ' · ' + esc(ai.detail) : 'none yet'}</p>
+        <h3>Message to the gauge</h3><div class="row2" style="flex-wrap:nowrap"><input id="mtext" maxlength="500" placeholder="Shown on the gauge after its next upload"><button id="send">Queue</button></div><div id="mr"></div>
+      </div>
+      <div class="card"><h2>Run records: every measurement</h2><p class="note">${r.runs.length ? 'From ' + esc(r.stats.length) + ' measurements in this gauge\'s run summaries. Drift: average of the newest fifth of runs minus the oldest fifth. The small chart is the last ' + r.runs.length + ' runs.' : ''}</p>
+        ${statTable(r.stats, trend)}</div>
+      <div class="card"><h2>Drive logs</h2>${table([{h: 'File', f: l => esc(l.file)}, {h: 'Received', f: l => dt(l.received)}, {h: 'Size', n: 1, f: l => num(l.size) + ' B'}, {h: 'Pieces', n: 1, f: l => esc(l.parts)},
+        {h: '', f: l => `<button class="sm" data-log="${esc(l.drive_id)}">Statistics</button> <a href="https://drive.google.com/file/d/${encodeURIComponent(l.drive_id)}/view" target="_blank" rel="noopener">Open in Drive</a>`}], r.logs.slice().reverse(), {empty: 'No drive logs uploaded yet.'})}
+        <div id="ls"></div></div>`;
+    $('#back').onclick = () => { G = null; show(); };
+    $('#saveu').onclick = () => {
+      const v = {}; document.querySelectorAll('[data-f]').forEach(i => { v[i.dataset.f] = i.type === 'checkbox' ? i.checked : i.value; });
+      $('#ur').textContent = 'Saving...'; call('setUnit', {unit: G, values: v}).then(x => { result($('#ur'), x); if (x.ok) reloadKeep(); });
+    };
+    $('#runai').onclick = () => { $('#ur').textContent = 'Asking the AI (up to 30 s)...'; call('runAi', {unit: G}).then(x => { result($('#ur'), x); if (x.ok) reloadKeep(); }); };
+    $('#send').onclick = () => { const t = $('#mtext').value.trim(); if (!t) return; call('message', {unit: G, text: t}).then(x => { result($('#mr'), x); if (x.ok) $('#mtext').value = ''; }); };
+    document.querySelectorAll('[data-log]').forEach(btn => btn.onclick = () => {
+      $('#ls').innerHTML = '<p class="note">Reading the log...</p>';
+      call('logstats', {drive_id: btn.dataset.log}).then(s => {
+        if (!s.ok) { $('#ls').innerHTML = `<p class="res err">${esc(s.error)}</p>`; return; }
+        const nums = s.stats.filter(x => x.kind === 'number'), txt = s.stats.filter(x => x.kind === 'text');
+        $('#ls').innerHTML = `<h3>${esc(s.file)}: ${num(s.lines)} lines${s.seconds != null ? ', ' + num(s.seconds) + ' s' : ''}</h3>${statTable(nums)}
+          ${txt.length ? '<h3>Text and flag columns</h3>' + table([{h: 'Column', f: x => lab(x.col)}, {h: 'Filled', n: 1, f: x => num(x.n)}, {h: 'Blank', n: 1, f: x => num(x.blank)}, {h: 'Distinct', n: 1, f: x => num(x.distinct)}, {h: 'Most common', wrap: 1, f: x => esc(x.top)}], txt) : ''}`;
+      }).catch(e => { $('#ls').innerHTML = `<p class="res err">${esc(e)}</p>`; });
+    });
+  }).catch(e => { $('#body').innerHTML = `<p class="res err">Could not reach the sheet: ${esc(e)}</p>`; });
+}
+function reloadKeep() { const keep = G; call('overview').then(r => { if (r.ok) { O = r; G = keep; show(); } }); }
+function load() {
+  if (!KEY) { $('#m').innerHTML = '<div class="msg">Open this page as admin.html#ADMIN_KEY (the ADMIN_KEY value from the Config tab of the sheet).</div>'; return; }
+  call('overview').then(r => {
+    if (!r.ok) { $('#m').innerHTML = `<div class="msg">${esc(r.error)}</div>`; return; }
+    O = r; show();
+  }).catch(() => { $('#m').innerHTML = '<div class="msg">Could not reach the sheet. Check that the newest Code.gs is deployed as a new version, then reload.</div>'; });
+}
+load();
+</script></body></html>

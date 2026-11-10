@@ -44,6 +44,17 @@ function band(b) {
     <div class="strip"><i style="left:${x(b.p10)}%;width:${(x(b.p90) - x(b.p10)).toFixed(1)}%"></i><em style="left:${x(b.mine)}%"></em></div>
     <div class="note">Similar MGFs ${fmt(b.p10, b.unit)} to ${fmt(b.p90, b.unit)}</div></div>`;
 }
+// one line on the AI suggestions: off, waiting, or what the last review found
+function aiNote() {
+  if (!D.ai) return '<p class="note">AI suggestions are off. Turn on "Ask for more" on the gauge page to add them to the fixed checks.</p>';
+  if (D.ai_key === false) return '<p class="note">AI suggestions are on for this car, but the AI service is not set up yet.</p>';
+  const L = D.ai_last, has = D.advice.some(a => a.source === 'ai');
+  if (!L) return '<p class="note">AI suggestions are on. The first AI review runs overnight, once there are 3 runs.</p>';
+  const when = new Date(L.when).toLocaleDateString();
+  if (/failed/.test(L.kind)) return `<p class="note">AI suggestions are on. The last AI review (${when}) did not complete; it tries again overnight.</p>`;
+  if (/skipped/.test(L.kind)) return `<p class="note">AI suggestions are on. The AI review is waiting: ${esc(L.detail)}.</p>`;
+  return `<p class="note">AI review ${when}: ${has ? 'its suggestions are marked AI above' : 'nothing stood out'}. One review a week.</p>`;
+}
 function render() {
   const c = D.car, h = D.health;
   let html = `<h1>${esc(c.name || 'My MGF')}</h1><div class="sub">${esc([c.year, c.model, c.engine].filter(Boolean).join(' '))} · last data ${D.last_seen ? new Date(D.last_seen).toLocaleString() : 'not yet'}</div>`;
@@ -53,7 +64,7 @@ function render() {
     <div class="adv ${a.source === 'ai' ? 'ai' : ''} ${a.status === 'Fixed' || a.status === 'Not a problem' ? 'done' : ''}"><span class="tag">${a.source === 'ai' ? 'AI suggestion · an idea to discuss, not a diagnosis' : esc(a.system)} · ${new Date(a.created).toLocaleDateString()}</span>
     <b>${esc(a.title)}</b><p>${esc(a.text)}</p>
     <select data-id="${esc(a.id)}">${['Open', 'Asked my mechanic', 'Fixed', 'Not a problem'].map(s => `<option${s === a.status ? ' selected' : ''}>${s}</option>`).join('')}</select></div>`).join('')}
-    <p class="note">Setting the status helps: it tells us which suggestions turned out to be right.</p></div>`;
+    ${aiNote()}<p class="note">Setting the status helps: it tells us which suggestions turned out to be right.</p></div>`;
   html += `<div class="card"><h2>Trends</h2>${D.trends.map(t => `<div style="margin:10px 0 14px"><div>${esc(t.label)}</div>${spark(t.v)}</div>`).join('')}</div>`;
   html += `<div class="card"><h2>Compared with similar MGFs</h2><p class="note">Your car's latest 1,000 km against other ${esc(D.group)} cars. A position, not a score.${D.in_progress_km ? ' Current block: ' + D.in_progress_km + ' of 1,000 km.' : ''}</p>${D.bands.map(band).join('') || '<p class="note">After the first 1,000 km.</p>'}</div>`;
   if (D.usage) html += `<div class="card"><h2>How the car is used (last 1,000 km)</h2><div class="kv">
