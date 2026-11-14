@@ -6,47 +6,81 @@
 <title>The Clock – for MGF · Capability Statement</title>
 <meta name="description" content="Capability statement: instruments that read pre-2000 engine computers through their diagnostic link and present live data, warnings and maintenance guidance to the driver.">
 <style>
-:root{--bg:#f6f7f9;--paper:#ffffff;--ink:#16191d;--dim:#5a6470;--line:#dde1e6;--head:#eef1f4;--acc:#b86e00;--ok:#1d7a47;--amb:#8a6500;--idea:#4c5e73}
-@media (prefers-color-scheme:dark){:root{--bg:#0b0d10;--paper:#12161b;--ink:#e9edf2;--dim:#93a0ae;--line:#262c35;--head:#181d24;--acc:#f2a33a;--ok:#3ccf7e;--amb:#f2c53a;--idea:#9fb3c8}}
+:root{--bg:#eef0f3;--paper:#ffffff;--ink:#16191d;--dim:#5a6470;--line:#dde1e6;--head:#eef1f4;--acc:#b86e00;--accbg:#fdf3e4;--ok:#1d7a47;--amb:#8a6500;--idea:#4c5e73}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0d10;--paper:#12161b;--ink:#e9edf2;--dim:#93a0ae;--line:#262c35;--head:#181d24;--acc:#f2a33a;--accbg:#2a2113;--ok:#3ccf7e;--amb:#f2c53a;--idea:#9fb3c8}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-main{max-width:920px;margin:24px auto;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:44px 48px 36px}
-@media (max-width:700px){main{margin:0;border:0;border-radius:0;padding:28px 16px}}
-.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--ink);padding-bottom:16px}
-.top .doc{font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc)}
-h1{font-size:30px;line-height:1.2;margin:4px 0 0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:1080px;margin:12px auto;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:20px 36px 16px}
+@media (max-width:700px){main{margin:0;border:0;border-radius:0;padding:20px 16px}}
+
+/* title block */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.top .doc{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--acc)}
+h1{font-size:25px;line-height:1.2;margin:2px 0 0}
 .meta{font-size:13px;color:var(--dim);text-align:right;line-height:1.5}
-h2{font-size:15px;letter-spacing:1px;text-transform:uppercase;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
-h2 span{color:var(--acc);margin-right:8px}
-h3{font-size:16px;margin:18px 0 4px}
+
+/* tab buttons */
+.tabs{display:flex;gap:4px;margin:12px 0 0;border-bottom:3px solid var(--ink);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs a{flex:none;padding:10px 16px;font-size:14px;font-weight:600;color:var(--dim);text-decoration:none;border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;background:var(--head);white-space:nowrap}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* panes */
+.pane{padding:18px 0 4px;min-height:440px}
+.js .pane{display:none}
+.js .pane.on{display:block}
+h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+.lede{color:var(--dim);margin:0 0 18px;max-width:52em}
+h3{font-size:16px;margin:12px 0 3px}
 p{margin:0 0 10px}
-.summary{font-size:17px}
-ul{margin:4px 0 10px;padding-left:20px}
-li{margin:3px 0}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px}
-@media (max-width:700px){.cols{grid-template-columns:1fr}}
+ul{margin:2px 0 8px;padding-left:20px}
+li{margin:2px 0}
+#does{font-size:15px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 32px}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 28px}
+@media (max-width:760px){.cols,.cols3{grid-template-columns:1fr}}
+.box{background:var(--head);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.box h3{margin-top:0}
+.call{border-left:4px solid var(--acc);background:var(--accbg);padding:12px 16px;border-radius:0 6px 6px 0;margin:16px 0 0}
 .wrapt{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0 10px}
-th,td{text-align:left;vertical-align:top;padding:8px 10px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:4px 0 8px}
+th,td{text-align:left;vertical-align:top;padding:6px 10px;border:1px solid var(--line)}
 th{background:var(--head);font-weight:600}
 td:first-child{font-weight:600;white-space:nowrap}
 @media (max-width:560px){td:first-child{white-space:normal}}
 .st{font-weight:700;font-size:13px;white-space:nowrap}
 .st.now{color:var(--ok)}.st.dev{color:var(--amb)}.st.idea{color:var(--idea)}
-.note{font-size:14px;color:var(--dim)}
-.figs{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:16px 0 6px;align-items:start}
-@media (max-width:860px){.figs{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:520px){.figs{grid-template-columns:1fr;max-width:320px;margin-left:auto;margin-right:auto}}
-figure{margin:0}
-figure img{width:100%;height:auto;display:block}
-figcaption{font-size:14px;color:var(--dim);margin-top:8px}
-figcaption b{color:var(--ink)}
-footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
-footer p{margin:4px 0}
-@media print{body{background:#fff}main{margin:0;border:0;padding:0}h2{break-after:avoid}table{break-inside:avoid}}
+.note{font-size:13px;color:var(--dim)}
+
+/* gauge and pages */
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.tiers{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.tiers{grid-template-columns:1fr}}
+.tier .shot{height:250px;display:flex;align-items:flex-start;justify-content:center;margin-bottom:10px}
+.tier .shot img{max-height:250px;max-width:100%;height:auto;width:auto;display:block}
+@media (max-width:480px){.tier .shot{height:auto}}
+.tier .basis{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-bottom:6px}
+.b-std{background:var(--head);color:var(--ink);border:1px solid var(--line)}
+.b-inc{background:var(--head);color:var(--ok);border:1px solid var(--line)}
+.b-opt{background:var(--accbg);color:var(--acc);border:1px solid var(--line)}
+.tier h3{margin:0 0 4px}
+.tier p{font-size:14px;color:var(--dim);margin:0}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:s}
+@media (max-width:760px){.steps{grid-template-columns:1fr 1fr}}
+.steps div{border-top:3px solid var(--acc);padding-top:8px;font-size:14px;color:var(--dim)}
+.steps b{display:block;color:var(--ink);font-size:15px}
+.steps b:before{counter-increment:s;content:counter(s) ". ";color:var(--acc)}
+
+footer{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+footer p{margin:2px 0}
+@media print{body{background:#fff}main{margin:0;border:0;padding:0}.tabs{display:none}.js .pane{display:block;min-height:0;break-before:page}}
 </style>
 </head>
 <body>
+<script>document.body.classList.add('js')</script>
 <main>
 
 <div class="top">
@@ -57,112 +91,156 @@ footer p{margin:4px 0}
   <div class="meta">Independent development project<br>Townsville, Queensland, Australia<br>Status: alpha testing · November 2026</div>
 </div>
 
-<h2><span>1</span>Summary</h2>
-<p class="summary">The Clock is a family of driver instruments that read pre-2000 engine computers through their diagnostic link and present live data, warnings and maintenance guidance in the car. That information has otherwise only been available to workshop scan tools. The first product replaces the MGF dash clock and reads the Rover MEMS 1.9 engine management system.</p>
+<nav class="tabs" role="tablist">
+  <a href="#need" role="tab">The need</a>
+  <a href="#does" role="tab">What it does</a>
+  <a href="#pages" role="tab">Gauge and pages</a>
+  <a href="#build" role="tab">The build</a>
+  <a href="#range" role="tab">The range</a>
+  <a href="#data" role="tab">Your data</a>
+  <a href="#status" role="tab">Status and contact</a>
+</nav>
 
-<h2><span>2</span>Core capabilities</h2>
-<div class="cols">
-  <div>
-    <h3>Engine computer communication</h3>
-    <ul>
-      <li>Reads the Rover MEMS 1.9 engine computer over the K-line diagnostic link.</li>
-      <li>Self-recovering connection, built for an installed unit that is not easily accessible.</li>
-      <li>Read-only: does not change engine computer settings. Limited actuator tests only, excluding injectors, ignition coils and settings.</li>
-      <li>Detects and reports Rover MEMS 2J (support in progress).</li>
-    </ul>
-    <h3>Driver display</h3>
-    <ul>
-      <li>Clock face as the rest screen; tap-through pages for temperatures, engine speed, gear-change cue and trip computer.</li>
-      <li>Master-caution alerting on out-of-limit readings.</li>
-      <li>Fault codes translated into plain English.</li>
-    </ul>
-    <h3>Standard interfaces</h3>
-    <ul>
-      <li>OBD-II output over Bluetooth and Wi-Fi (ELM327 convention), so existing OBD apps can read the car.</li>
-      <li>Phone page: live data and settings, served by the gauge over its own Wi-Fi (section 4).</li>
-    </ul>
+<!-- 1. THE NEED -->
+<section class="pane" id="need" role="tabpanel">
+  <h2>The need</h2>
+  <p class="lede">The Clock is a family of driver instruments that read pre-2000 engine computers through their diagnostic link and present live data, warnings and maintenance guidance in the car. The first product replaces the MGF dash clock and reads the Rover MEMS 1.9 engine management system.</p>
+  <div class="cols3">
+    <div class="box"><h3>The data exists, but is locked away</h3><p>Engine computers of the 1990s continuously measure coolant temperature, fuelling, idle, charging and faults. They share this only with a workshop scan tool plugged into the diagnostic socket.</p></div>
+    <div class="box"><h3>The dash says very little</h3><p>A temperature needle and a few warning lights are all the driver sees. Slow changes, such as a cooling system starting to struggle or an idle that creeps up, go unnoticed until they become a breakdown.</p></div>
+    <div class="box"><h3>Standard tools don't reach these cars</h3><p>Generic OBD-II scanners and apps can't read the MEMS 1.9. Owners of these cars have had no practical way to see their engine's data in real time.</p></div>
   </div>
-  <div>
-    <h3>Logging and trend capture</h3>
-    <ul>
-      <li>Aviation-style recording: a stable set of key metrics captured on every drive cycle (start, mid and end temperatures, cycles, engine hours, out-of-limit flags).</li>
-      <li>Motion sensor data (acceleration, sway, roll) and GPS-derived speed and distance.</li>
-    </ul>
-    <h3>Owner and fleet analysis</h3>
-    <ul>
-      <li>Opt-in upload of drive summaries to a hosted data store.</li>
-      <li>Car analytics page (opt-in): a private web page per car with history, reports, logs and open advice (section 4).</li>
-      <li>Fleet analytics page (separate opt-in): the car's position within the ranges of similar cars.</li>
-      <li>Fleet statistics and a periodic “State of the Fleet” summary for opted-in owners.</li>
-      <li>Optional AI-assisted advice, always worded “ask your mechanic to consider…”, never as a diagnosis or instruction.</li>
-    </ul>
-    <h3>Fleet administration</h3>
-    <ul>
-      <li>Admin dashboard: owners, gauges, configuration, per-measurement log statistics.</li>
-      <li>Fleet firmware update workflow (planned).</li>
-    </ul>
+  <div class="call"><b>The response:</b> an instrument that fits where the dash clock was, reads the engine computer every drive, shows what matters, keeps a consistent record over time and turns it into plain-English advice for the owner and their mechanic.</div>
+</section>
+
+<!-- 2. WHAT IT DOES -->
+<section class="pane" id="does" role="tabpanel">
+  <h2>What it does</h2>
+  <p class="lede">It listens to the engine computer, shows the driver what matters, warns when something is out of limits, logs every drive and advises on the car's condition.</p>
+  <div class="cols3">
+    <div>
+      <h3>Engine computer communication</h3>
+      <ul>
+        <li>Reads the Rover MEMS 1.9 over the K-line diagnostic link.</li>
+        <li>Self-recovering connection, built for an installed unit that isn't easily reached.</li>
+        <li>Read-only: never changes engine computer settings. Limited actuator tests only, excluding injectors, ignition coils and settings.</li>
+        <li>Detects and reports Rover MEMS 2J (support in progress).</li>
+      </ul>
+      <h3>Standard interfaces</h3>
+      <ul>
+        <li>OBD-II output over Bluetooth and Wi-Fi (ELM327 convention), so existing OBD apps can read the car.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Driver display and alerts</h3>
+      <ul>
+        <li>Clock face as the rest screen; tap-through pages for temperatures, engine speed, gear-change cue and trip computer.</li>
+        <li>Master-caution alert on out-of-limit readings; fault codes in plain English.</li>
+      </ul>
+      <h3>Logging and trends</h3>
+      <ul>
+        <li>Aviation-style recording: a stable set of key metrics on every drive cycle (start, mid and end temperatures, cycles, engine hours, out-of-limit flags).</li>
+        <li>Motion sensor data and GPS-derived speed and distance.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Advice and analysis</h3>
+      <ul>
+        <li>Car analytics page with history, reports and open advice (opt-in).</li>
+        <li>Fleet analytics: the car's position among similar cars and a periodic “State of the Fleet” summary (separate opt-in).</li>
+        <li>Optional AI-assisted advice, worded “ask your mechanic to consider…”, never a diagnosis or instruction.</li>
+      </ul>
+      <h3>Fleet administration</h3>
+      <ul>
+        <li>Admin dashboard: owners, gauges, configuration and log statistics.</li>
+        <li>Fleet firmware updates (planned).</li>
+      </ul>
+    </div>
   </div>
-</div>
+</section>
 
-<h2><span>3</span>Product configurations</h2>
-<div class="wrapt"><table>
-  <tr><th>Configuration</th><th>Description</th><th>Vehicles</th><th>Status</th></tr>
-  <tr><td>The Clock (in-dash)</td><td>Replaces the original dash clock. Fits the clock opening from behind and reuses the original clamp. No cutting or drilling.</td><td>MGF, Rover MEMS 1.9</td><td><span class="st now">Alpha testing</span></td></tr>
-  <tr><td>The Pod</td><td>The same instrument in a stand-alone pod for dash or camera-style mounts, for cars without a suitable opening.</td><td>First target: Mitsubishi 4G63T (Lancer Evolution 6)</td><td><span class="st dev">In development</span></td></tr>
-  <tr><td>Raceday</td><td>Pocket device in the diagnostic socket for track days, with lap sessions that can be saved and shared.</td><td>MG-specific data on MGF; standard OBD-II on other cars</td><td><span class="st idea">Concept</span></td></tr>
-</table></div>
+<!-- 3. GAUGE AND PAGES -->
+<section class="pane" id="pages" role="tabpanel">
+  <h2>Gauge and pages</h2>
+  <p class="lede">The gauge is standard and the phone page comes with it. The car analytics page is opt-in, and the fleet analytics page is a separate opt-in.</p>
+  <div class="tiers">
+    <div class="tier"><div class="shot"><a href="img/mock_gauge_screen.png" target="_blank" title="Open full size"><img src="img/mock_gauge_screen.png" alt="Sample gauge screen: clock, coolant temperature, gear cue and engine speed ring" style="margin-top:14px;max-width:88%"></a></div>
+      <span class="basis b-std">Standard</span><h3>Gauge</h3>
+      <p>In the dash: clock face, engine pages, gear-change cue, trip computer, alerts and plain-English fault codes. Needs no connection.</p></div>
+    <div class="tier"><div class="shot"><a href="img/mock_phone_page.png" target="_blank" title="Open full size"><img src="img/mock_phone_page.png" alt="Sample phone page: live engine readings, alerts and fault status"></a></div>
+      <span class="basis b-inc">Comes with the gauge</span><h3>1. Phone page</h3>
+      <p>Any phone on the gauge's own Wi-Fi: live readings, faults, fill-ups, odometer and service entries, and all settings.</p></div>
+    <div class="tier"><div class="shot"><a href="img/mock_car_analytics.png" target="_blank" title="Open full size"><img src="img/mock_car_analytics.png" alt="Sample car analytics page: condition by system, advice, trends and engine life"></a></div>
+      <span class="basis b-opt">Opt-in</span><h3>2. Car analytics page</h3>
+      <p>The owner's own web page, from a private email link: updates, reports, logs, analysis, advice and trends. The car's data stays the owner's.</p></div>
+    <div class="tier"><div class="shot"><a href="img/mock_fleet_analytics.png" target="_blank" title="Open full size"><img src="img/mock_fleet_analytics.png" alt="Sample fleet analytics page: this car's position on fleet ranges"></a></div>
+      <span class="basis b-opt">Separate opt-in</span><h3>3. Fleet analytics page</h3>
+      <p>Where the car sits among similar cars for each measurement, plus fleet totals. Never shows another car's details.</p></div>
+  </div>
+  <p class="note" style="margin-top:14px">Sample data; click a screen to see it full size. Screens are illustrative and may change during testing.</p>
+</section>
 
-<h2><span>4</span>Gauge and service tiers</h2>
-<p>The gauge is standard and works on its own. The phone page comes with it. Two web pages are opt-in: the car's own analytics page and, separately, the fleet analytics page.</p>
-<div class="wrapt"><table>
-  <tr><th>Level</th><th>Basis</th><th>What it provides</th></tr>
-  <tr><td>Gauge</td><td>Standard</td><td>In the dash: clock face, engine pages, gear-change cue, trip computer, master-caution alerts and plain-English fault codes. Needs no connection.</td></tr>
-  <tr><td>1. Phone page</td><td>Comes with the gauge</td><td>Any phone on the gauge's own Wi-Fi: live readings in detail, engine computer faults, fill-ups, odometer and service entries, and all settings. Existing OBD apps can also read the car through the OBD-II output.</td></tr>
-  <tr><td>2. Car analytics page</td><td>Opt-in</td><td>The owner's own web page for the car, from a private link in their email: updates, reports, logs and analysis; condition by system, advice and trends; optional AI-assisted advice. The car's data stays the owner's.</td></tr>
-  <tr><td>3. Fleet analytics page</td><td>Separate opt-in</td><td>Where the car sits among similar cars for each measurement, plus fleet totals and the periodic “State of the Fleet” summary. Shares the car's figures anonymously in fleet totals; never shows another car's details.</td></tr>
-</table></div>
-<div class="figs">
-  <figure><img src="img/mock_gauge_screen.png" alt="Sample gauge screen: clock, coolant temperature, gear cue and engine speed ring" loading="lazy"><figcaption><b>Gauge.</b> The clock face rest screen with coolant temperature, gear-change cue and engine speed.</figcaption></figure>
-  <figure><img src="img/mock_phone_page.png" alt="Sample phone page: live engine readings, alerts and fault status" loading="lazy"><figcaption><b>1. Phone page.</b> Live readings, alerts and engine computer faults, on a phone joined to the gauge's Wi-Fi.</figcaption></figure>
-  <figure><img src="img/mock_car_analytics.png" alt="Sample car analytics page: condition by system, advice, trends and engine life" loading="lazy"><figcaption><b>2. Car analytics page.</b> Condition by system, open advice, trends and engine life since fitting.</figcaption></figure>
-  <figure><img src="img/mock_fleet_analytics.png" alt="Sample fleet analytics page: this car's position on fleet ranges" loading="lazy"><figcaption><b>3. Fleet analytics page.</b> Where the car sits among similar cars for each measurement. A position, not a score.</figcaption></figure>
-</div>
-<p class="note">Sample data. Screens are illustrative and may change during testing.</p>
+<!-- 4. THE BUILD -->
+<section class="pane" id="build" role="tabpanel">
+  <h2>The build <span class="note" style="font-weight:400;font-size:14px">· The Clock as built for alpha testing</span></h2>
+  <div class="wrapt"><table>
+    <tr><th>Item</th><th>Specification</th></tr>
+    <tr><td>Display and processor</td><td>1.75-inch round AMOLED touch display, 466 × 466; ESP32-S3 dual-core processor with Wi-Fi and Bluetooth</td></tr>
+    <tr><td>Sensors</td><td>Six-axis motion sensor; GPS on GPS-equipped units (speed and distance only)</td></tr>
+    <tr><td>Vehicle interface</td><td>Interface board r1: K-line transceiver and 12 V supply conditioning, plugged directly onto the display board</td></tr>
+    <tr><td>Vehicle connection</td><td>3-way lead: K-line from the diagnostic socket, ignition-switched 12 V via a plug-in fuse tap, ground</td></tr>
+    <tr><td>Housing</td><td>Printed insert matching the original clock rim (55.8 mm), keyed to the dash locating tabs; stepped rear cover; original clamp and O-ring reused</td></tr>
+    <tr><td>Alerts</td><td>On-screen master caution; external speaker</td></tr>
+    <tr><td>Back end</td><td>Hosted data store and web pages; email notifications to owners</td></tr>
+  </table></div>
+  <h3 style="margin-top:16px">Fitting: owner-fitted, plug-together throughout, no cutting, drilling, soldering or splicing</h3>
+  <div class="steps">
+    <div><b>Remove the clock</b>Unclip it from behind the dash; keep the clamp and O-ring.</div>
+    <div><b>Plug in the lead</b>Diagnostic socket and a plug-in fuse tap on an ignition fuse.</div>
+    <div><b>Fit the gauge</b>Into the opening from behind, keyed to the tabs; refit the clamp with longer screws.</div>
+    <div><b>Turn the key</b>It finds the engine computer on its own.</div>
+  </div>
+</section>
 
-<h2><span>5</span>Technical specification: The Clock (alpha)</h2>
-<div class="wrapt"><table>
-  <tr><th>Item</th><th>Specification</th></tr>
-  <tr><td>Display and processor</td><td>1.75-inch round AMOLED touch display, 466 × 466, ESP32-S3 dual-core processor with Wi-Fi and Bluetooth</td></tr>
-  <tr><td>Sensors</td><td>Six-axis motion sensor; GPS on GPS-equipped units (speed and distance only)</td></tr>
-  <tr><td>Vehicle interface</td><td>Interface board r1: K-line transceiver and 12 V supply conditioning, plugged directly onto the display board</td></tr>
-  <tr><td>Vehicle connection</td><td>3-way lead: K-line from the diagnostic socket, ignition-switched 12 V via a plug-in fuse tap, ground</td></tr>
-  <tr><td>Housing</td><td>Printed insert matching the original clock rim (55.8 mm), keyed to the dash locating tabs; stepped rear cover; original clamp and O-ring reused</td></tr>
-  <tr><td>Alerts</td><td>On-screen master caution; external speaker</td></tr>
-  <tr><td>Installation</td><td>Owner-fitted from behind the dash; plug-together throughout, no soldering or splicing into the car's wiring</td></tr>
-  <tr><td>Back end</td><td>Hosted data store and web pages; email notifications to owners</td></tr>
-</table></div>
+<!-- 5. THE RANGE -->
+<section class="pane" id="range" role="tabpanel">
+  <h2>The range</h2>
+  <p class="lede">The same core, a small computer that speaks the car's own diagnostic language, in different housings for different cars and uses. The aim is cars with no other way to show live engine data.</p>
+  <div class="wrapt"><table>
+    <tr><th>Configuration</th><th>Description</th><th>Vehicles</th><th>Status</th></tr>
+    <tr><td>The Clock (in-dash)</td><td>Replaces the original dash clock. Fits the clock opening from behind and reuses the original clamp.</td><td>MGF, Rover MEMS 1.9</td><td><span class="st now">Alpha testing</span></td></tr>
+    <tr><td>The Pod</td><td>The same instrument in a stand-alone pod for dash or camera-style mounts, for cars without a suitable opening.</td><td>First target: Mitsubishi 4G63T (Lancer Evolution 6)</td><td><span class="st dev">In development</span></td></tr>
+    <tr><td>Raceday</td><td>Pocket device in the diagnostic socket for track days, with lap sessions that can be saved and shared.</td><td>MG-specific data on MGF; standard OBD-II on other cars</td><td><span class="st idea">Concept</span></td></tr>
+  </table></div>
+</section>
 
-<h2><span>6</span>Data handling</h2>
-<ul>
-  <li>Vehicle location is never stored or transmitted. GPS is used for speed and distance only.</li>
-  <li>The car analytics page, the fleet analytics page and AI advice are each opt-in. With them switched off, no data leaves the car.</li>
-  <li>No driving scores. Advice concerns the condition of the car, not the driver.</li>
-  <li>The car analytics page is private to one car. Fleet outputs show totals and averages only, never another car's details.</li>
-  <li>Owners can delete their data at any time from their car's page.</li>
-</ul>
+<!-- 6. YOUR DATA -->
+<section class="pane" id="data" role="tabpanel">
+  <h2>Your data</h2>
+  <p class="lede">The rules the system is built to.</p>
+  <ul>
+    <li>Vehicle location is never stored or transmitted. GPS is used for speed and distance only.</li>
+    <li>The car analytics page, the fleet analytics page and AI advice are each opt-in. With them switched off, no data leaves the car.</li>
+    <li>No driving scores. Advice concerns the condition of the car, not the driver.</li>
+    <li>The car analytics page is private to one car. Fleet outputs show totals and averages only, never another car's details.</li>
+    <li>Owners can delete their data at any time from their car analytics page.</li>
+  </ul>
+</section>
 
-<h2><span>7</span>Development status</h2>
-<div class="wrapt"><table>
-  <tr><th>Stage</th><th>Scope</th><th>Status</th></tr>
-  <tr><td>Bench and prototype</td><td>Engine computer link, display firmware, interface board, back end</td><td><span class="st now">Complete</span></td></tr>
-  <tr><td>Alpha</td><td>Small group of MGF owners; self-install from instructions; logging, owner pages and fleet reports</td><td><span class="st dev">Under way</span></td></tr>
-  <tr><td>Release</td><td>Retail units for MGF</td><td><span class="st idea">Planned</span></td></tr>
-  <tr><td>Range extension</td><td>Further pre-2000 engine computers; Pod and Raceday configurations</td><td><span class="st idea">Planned</span></td></tr>
-</table></div>
-<p class="note">Alpha units are not for sale.</p>
-
-<h2><span>8</span>Contact</h2>
-<p id="contact">Enquiries about the project, alpha testing or future versions: <span id="contactLine">contact details to follow.</span></p>
+<!-- 7. STATUS AND CONTACT -->
+<section class="pane" id="status" role="tabpanel">
+  <h2>Status and contact</h2>
+  <div class="wrapt"><table>
+    <tr><th>Stage</th><th>Scope</th><th>Status</th></tr>
+    <tr><td>Bench and prototype</td><td>Engine computer link, display firmware, interface board, back end</td><td><span class="st now">Complete</span></td></tr>
+    <tr><td>Alpha</td><td>Small group of MGF owners; self-install from instructions; logging, analytics pages and fleet reports</td><td><span class="st dev">Under way</span></td></tr>
+    <tr><td>Release</td><td>Retail units for MGF</td><td><span class="st idea">Planned</span></td></tr>
+    <tr><td>Range extension</td><td>Further pre-2000 engine computers; Pod and Raceday configurations</td><td><span class="st idea">Planned</span></td></tr>
+  </table></div>
+  <p class="note">Alpha units are not for sale.</p>
+  <h3 style="margin-top:18px">Contact</h3>
+  <p>Enquiries about the project, alpha testing or future versions: <span id="contactLine">contact details to follow.</span></p>
+</section>
 
 <footer>
   <p>Owners: open your car analytics page from the link in your email. Each link is private to one car.</p>
@@ -173,6 +251,17 @@ footer p{margin:4px 0}
 // Contact for enquiries: a form link or a mailto: address. Leave empty until it's set up.
 const CONTACT_URL = '', CONTACT_TEXT = '';
 if (CONTACT_URL) { const a = document.createElement('a'); a.href = CONTACT_URL; a.textContent = CONTACT_TEXT || CONTACT_URL.replace(/^mailto:/, ''); const s = document.getElementById('contactLine'); s.textContent = ''; s.appendChild(a); }
+
+// Tabs: one section at a time, chosen by the button (and the #address, so links and Back work)
+const panes = [...document.querySelectorAll('.pane')], tabs = [...document.querySelectorAll('.tabs a')];
+function show() {
+  const id = (location.hash || '#need').slice(1), pane = panes.find(p => p.id === id) || panes[0];
+  panes.forEach(p => p.classList.toggle('on', p === pane));
+  tabs.forEach(t => t.setAttribute('aria-selected', t.getAttribute('href') === '#' + pane.id));
+  const t = tabs.find(t => t.getAttribute('href') === '#' + pane.id); if (t) t.scrollIntoView({block: 'nearest', inline: 'nearest'});
+  window.scrollTo(0, 0);
+}
+addEventListener('hashchange', show); show();
 </script>
 </body>
 </html>
