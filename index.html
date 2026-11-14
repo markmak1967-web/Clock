@@ -34,6 +34,12 @@ td:first-child{font-weight:600;white-space:nowrap}
 .st{font-weight:700;font-size:13px;white-space:nowrap}
 .st.now{color:var(--ok)}.st.dev{color:var(--amb)}.st.idea{color:var(--idea)}
 .note{font-size:14px;color:var(--dim)}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:14px 0 6px}
+@media (max-width:700px){.figs{grid-template-columns:1fr;max-width:340px;margin-left:auto;margin-right:auto}}
+figure{margin:0}
+figure img{width:100%;height:auto;display:block}
+figcaption{font-size:14px;color:var(--dim);margin-top:8px}
+figcaption b{color:var(--ink)}
 footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
 footer p{margin:4px 0}
 @media print{body{background:#fff}main{margin:0;border:0;padding:0}h2{break-after:avoid}table{break-inside:avoid}}
@@ -84,7 +90,7 @@ footer p{margin:4px 0}
     <h3>Owner and fleet analysis</h3>
     <ul>
       <li>Opt-in upload of drive summaries to a hosted data store.</li>
-      <li>Private owner page per car: history, open advice, and the car's position within fleet ranges.</li>
+      <li>Owner log page: a private web page per car with history, open advice and the car's position within fleet ranges (section 5).</li>
       <li>Fleet statistics and a periodic “State of the Fleet” summary for opted-in owners.</li>
       <li>Optional AI-assisted advice, always worded “ask your mechanic to consider…”, never as a diagnosis or instruction.</li>
     </ul>
@@ -109,10 +115,19 @@ footer p{margin:4px 0}
   <tr><th>Level</th><th>What it provides</th></tr>
   <tr><td>Instrument only</td><td>All display, warning and logging functions on the dash, with no connection required.</td></tr>
   <tr><td>Phone page and OBD apps</td><td>Settings and live data on a phone over the gauge's Wi-Fi; third-party OBD apps via the OBD-II output.</td></tr>
-  <tr><td>Connected (planned app)</td><td>Drive history, fleet comparison and optional AI-assisted advice. Free app, no advertising.</td></tr>
+  <tr><td>Owner log page</td><td>A private web page for each car, opened from a link in the owner's email: condition, advice, drive history and fleet comparison, with optional AI-assisted advice. Works in any phone or computer browser; nothing to install. Free, no advertising.</td></tr>
 </table></div>
 
-<h2><span>5</span>Technical specification: The Clock (alpha)</h2>
+<h2><span>5</span>Owner log page</h2>
+<p>The owner log page is how owners see their car's records. The gauge serves its own page over Wi-Fi for live data and settings; drive summaries the owner chooses to upload build a private history page and a comparison with similar cars. Sample screens:</p>
+<div class="figs">
+  <figure><img src="img/mock_gauge_page.png" alt="Sample of the page served by the gauge: live engine readings, alerts and fault status" loading="lazy"><figcaption><b>On the gauge.</b> Live readings, alerts and engine computer faults, on a phone joined to the gauge's Wi-Fi.</figcaption></figure>
+  <figure><img src="img/mock_car_history.png" alt="Sample owner log page: condition by system, advice, trends and engine life" loading="lazy"><figcaption><b>Car history.</b> Condition by system, open advice, trends over recent drives and engine life since fitting.</figcaption></figure>
+  <figure><img src="img/mock_fleet.png" alt="Sample fleet comparison: this car's position on fleet ranges for key measurements" loading="lazy"><figcaption><b>Fleet comparison.</b> Where the car sits within the range of similar cars for each measurement. A position, not a score.</figcaption></figure>
+</div>
+<p class="note">Sample data. Screens are illustrative and may change during testing.</p>
+
+<h2><span>6</span>Technical specification: The Clock (alpha)</h2>
 <div class="wrapt"><table>
   <tr><th>Item</th><th>Specification</th></tr>
   <tr><td>Display and processor</td><td>1.75-inch round AMOLED touch display, 466 × 466, ESP32-S3 dual-core processor with Wi-Fi and Bluetooth</td></tr>
@@ -125,7 +140,7 @@ footer p{margin:4px 0}
   <tr><td>Back end</td><td>Hosted data store and web pages; email notifications to owners</td></tr>
 </table></div>
 
-<h2><span>6</span>Data handling</h2>
+<h2><span>7</span>Data handling</h2>
 <ul>
   <li>Vehicle location is never stored or transmitted. GPS is used for speed and distance only.</li>
   <li>Uploads and AI advice are opt-in. With them switched off, no data leaves the car.</li>
@@ -134,17 +149,17 @@ footer p{margin:4px 0}
   <li>Owners can delete their data at any time from their car's page.</li>
 </ul>
 
-<h2><span>7</span>Development status</h2>
+<h2><span>8</span>Development status</h2>
 <div class="wrapt"><table>
   <tr><th>Stage</th><th>Scope</th><th>Status</th></tr>
   <tr><td>Bench and prototype</td><td>Engine computer link, display firmware, interface board, back end</td><td><span class="st now">Complete</span></td></tr>
   <tr><td>Alpha</td><td>Small group of MGF owners; self-install from instructions; logging, owner pages and fleet reports</td><td><span class="st dev">Under way</span></td></tr>
-  <tr><td>Release</td><td>Retail units for MGF; connected app</td><td><span class="st idea">Planned</span></td></tr>
+  <tr><td>Release</td><td>Retail units for MGF</td><td><span class="st idea">Planned</span></td></tr>
   <tr><td>Range extension</td><td>Further pre-2000 engine computers; Pod and Raceday configurations</td><td><span class="st idea">Planned</span></td></tr>
 </table></div>
 <p class="note">Alpha units are not for sale.</p>
 
-<h2><span>8</span>Contact</h2>
+<h2><span>9</span>Contact</h2>
 <p id="contact">Enquiries about the project, alpha testing or future versions: <span id="contactLine">contact details to follow.</span></p>
 
 <footer>
