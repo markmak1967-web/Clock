@@ -67,6 +67,14 @@ td:first-child{font-weight:600;white-space:nowrap}
 .tier h3{margin:0 0 4px}
 .tier p{font-size:14px;color:var(--dim);margin:0}
 
+/* capabilities */
+.caps{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;counter-reset:c}
+@media (max-width:860px){.caps{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.caps{grid-template-columns:1fr}}
+.caps li{background:var(--head);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:14px;color:var(--dim);margin:0}
+.caps b{display:block;color:var(--ink);font-size:15px;margin-bottom:3px}
+.caps b:before{counter-increment:c;content:counter(c);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--acc);color:var(--paper);font-size:12px;margin-right:8px;vertical-align:1px}
+
 /* steps */
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:s}
 @media (max-width:760px){.steps{grid-template-columns:1fr 1fr}}
@@ -116,47 +124,18 @@ footer p{margin:2px 0}
 <!-- 2. WHAT IT DOES -->
 <section class="pane" id="does" role="tabpanel">
   <h2>What it does</h2>
-  <p class="lede">It listens to the engine computer, shows the driver what matters, warns when something is out of limits, logs every drive and advises on the car's condition.</p>
-  <div class="cols3">
-    <div>
-      <h3>Engine computer communication</h3>
-      <ul>
-        <li>Reads the Rover MEMS 1.9 over the K-line diagnostic link.</li>
-        <li>Self-recovering connection, built for an installed unit that isn't easily reached.</li>
-        <li>Read-only: never changes engine computer settings. Limited actuator tests only, excluding injectors, ignition coils and settings.</li>
-        <li>Detects and reports Rover MEMS 2J (support in progress).</li>
-      </ul>
-      <h3>Standard interfaces</h3>
-      <ul>
-        <li>OBD-II output over Bluetooth and Wi-Fi (ELM327 convention), so existing OBD apps can read the car.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Driver display and alerts</h3>
-      <ul>
-        <li>Rest screen: a classic white-dial clock in the style of the original, or a digital clock. Tap-through pages: quadrant engine screen, gear-change cue and trip computer.</li>
-        <li>Master-caution alert on out-of-limit readings; fault codes in plain English.</li>
-      </ul>
-      <h3>Logging and trends</h3>
-      <ul>
-        <li>Aviation-style recording: a stable set of key metrics on every drive cycle (start, mid and end temperatures, cycles, engine hours, out-of-limit flags).</li>
-        <li>Motion sensor data and GPS-derived speed and distance.</li>
-      </ul>
-    </div>
-    <div>
-      <h3>Advice and analysis</h3>
-      <ul>
-        <li>Car analytics page with history, reports and open advice (opt-in).</li>
-        <li>Fleet analytics: the car's position among similar cars and a periodic “State of the Fleet” summary (separate opt-in).</li>
-        <li>Optional AI-assisted advice, worded “ask your mechanic to consider…”, never a diagnosis or instruction.</li>
-      </ul>
-      <h3>Fleet administration</h3>
-      <ul>
-        <li>Admin dashboard: owners, gauges, configuration and log statistics.</li>
-        <li>Fleet firmware updates (planned).</li>
-      </ul>
-    </div>
-  </div>
+  <ol class="caps">
+    <li><b>Replaces the original clock</b>Fits the clock opening from behind. Rest screen: a classic white-dial clock like the original, or a digital clock.</li>
+    <li><b>Readouts of key engine data</b>Coolant, battery, intake air and throttle, with engine speed and manifold pressure rings.</li>
+    <li><b>Indicators and warnings</b>Master caution on out-of-limit readings; fault codes in plain English; “clear and watch” to see whether a fault returns.</li>
+    <li><b>Gear-change points</b>Calculates the best change points for economy or for power, shown as a cue on the gauge.</li>
+    <li><b>Trip computer</b>Distance, engine running time and fuel used from the owner's fill-up entries.</li>
+    <li><b>Motion sensing for wear</b>Records g-forces (acceleration, braking, cornering, bumps) as an indicator of suspension and component wear over time.</li>
+    <li><b>Logs every drive</b>Key readings and distances on every drive cycle. Location is never stored or sent.</li>
+    <li><b>Analytics and advice</b>Opt-in car analytics page with trends and advice (“ask your mechanic to consider…”); a separate opt-in fleet page compares similar cars.</li>
+    <li><b>OBD-II export</b>Over Bluetooth and Wi-Fi, so any OBD app can read the car.</li>
+  </ol>
+  <p class="note" style="margin-top:12px">Reads the Rover MEMS 1.9 over the K-line diagnostic link with a self-recovering connection. Read-only: never changes engine computer settings. Rover MEMS 2J is detected and reported; full support is in progress.</p>
 </section>
 
 <!-- 3. GAUGE AND PAGES -->
