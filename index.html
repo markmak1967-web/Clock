@@ -78,9 +78,9 @@ a{color:var(--acc)}
 .caps b:before{counter-increment:c;content:counter(c);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--acc);color:var(--paper);font-size:12px;margin-right:8px;vertical-align:1px}
 
 /* installation */
-.inst{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px;align-items:start}
+.inst{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
 @media (max-width:760px){.inst{grid-template-columns:1fr}}
-.exp{margin:0}.exp img{width:100%;max-height:430px;object-fit:contain;background:#0f1214;border-radius:6px;display:block}
+.exp{margin:0}.exp img{width:100%;max-height:470px;object-fit:contain;border-radius:6px;display:block}
 .exp figcaption{font-size:13px;color:var(--dim);margin-top:8px}
 .isteps{list-style:none;padding:0;margin:0;counter-reset:i}
 .isteps li{position:relative;padding:0 0 12px 40px;font-size:14.5px;color:var(--dim);margin:0}
@@ -192,14 +192,13 @@ footer p{margin:2px 0}
 <!-- INSTALLATION -->
 <section class="pane" id="install" role="tabpanel">
   <h2>Installation</h2>
-  <p class="lede">Owner-fitted from behind the dash, in place of the original clock. Plug-together throughout: no cutting, drilling, soldering or changes to the car's wiring. A screwdriver is the only tool.</p>
+  <p class="lede">Owner-fitted from behind the dash, in place of the original clock. Three plugs: no cutting, soldering or changes to the car's wiring. Allow about an hour.</p>
   <div class="inst">
-    <figure class="exp"><a href="img/install_exploded.png" target="_blank" title="Open full size"><img src="img/install_exploded.png" alt="Exploded view of the gauge assembly behind the dash opening"></a>
-      <figcaption>Exploded view, top to bottom: dash opening (car) · display glass and board · board support ring · interface board · printed insert · O-ring and clamp (from the original clock) · rear cover · GPS patch.</figcaption></figure>
+    <figure class="exp"><a href="img/install_three_plugs.jpg" target="_blank" title="Open full size"><img src="img/install_three_plugs.jpg" alt="Fitting the gauge, three plugs: gauge in the clock hole, lead into the diagnostic socket, fuse tap in fuse 16"></a></figure>
     <ol class="isteps">
       <li><b>Remove the original clock</b>From behind the dash. Keep its clamp, screws and O-ring.</li>
-      <li><b>Fit the power tap</b>Plug the fuse tap into an ignition-switched fuse; the fusebox lid shows which.</li>
-      <li><b>Run the lead</b>Plug the lead into the diagnostic socket, run it behind the dash to the clock opening and plug it into the gauge.</li>
+      <li><b>Fit the power tap</b>Plug the fuse tap into fuse 16, so the gauge only has power with the ignition on.</li>
+      <li><b>Run the lead</b>Plug the lead into the diagnostic socket (it has its own socket on the back, so scan tools still plug in), run it behind the console to the clock opening and plug it into the gauge.</li>
       <li><b>Fit the gauge</b>O-ring onto the gauge's shoulder. Slide it into the opening from behind, forks over the four tabs, socket to the top.</li>
       <li><b>Clamp it</b>A spacer on each post, the original clamp over the back, and the longer screws. Snug only.</li>
       <li><b>Turn the key</b>The gauge finds the engine computer by itself. Scan the code on the screen to open the phone page.</li>
