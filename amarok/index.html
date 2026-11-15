@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1013">
+<title>Amarok OBD</title>
+<style>
+:root{--bg:#0e1013;--panel:#171a1f;--line:#2a2f37;--text:#e8eaed;--dim:#8a919c;--accent:#4fb3ff;--ok:#3ccf7a;--warn:#ffb020;--bad:#ff5a5a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;padding:calc(env(safe-area-inset-top) + 4px) 12px 32px}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 12px}
+h1{font-size:19px;margin:0}
+#status{font-size:13px;color:var(--dim);text-align:right}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--ok)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:14px 10px;font-size:15px;font-weight:600;font-family:inherit}
+button.primary{background:var(--accent);color:#00131f;border-color:var(--accent)}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.35}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin:0 0 10px}
+#tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{background:#0f1216;border:1px solid var(--line);border-radius:10px;padding:10px}
+.tile .label{font-size:12px;color:var(--dim)}
+.tile .val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile .unit{font-size:13px;color:var(--dim);margin-left:4px;font-weight:400}
+#mil{font-weight:600;margin-bottom:8px}
+.code{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.code b{font-size:19px;font-variant-numeric:tabular-nums}
+.code a{color:var(--accent);font-size:14px;text-decoration:none}
+.tag{font-size:12px;color:var(--warn);margin-left:8px}
+#log{height:200px;overflow:auto;font:12px/1.35 ui-monospace,Menlo,monospace;background:#090b0d;border-radius:8px;padding:8px;white-space:pre-wrap;color:#b9c0ca;margin:0}
+.row{display:flex;gap:8px;margin-top:8px}
+.row input{flex:1;min-width:0;background:#090b0d;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;font:15px ui-monospace,Menlo,monospace;text-transform:uppercase}
+.row button{padding:10px 16px}
+.note{font-size:13px;color:var(--dim);margin:0}
+.note li{margin-bottom:6px}
+.empty{color:var(--dim);font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Amarok OBD</h1>
+  <div id="status"><span id="dot" class="dot"></span><span id="statusText">Not connected</span></div>
+</header>
+
+<div class="btns">
+  <button id="connectBtn" class="primary">Connect</button>
+  <button id="disconnectBtn" disabled>Disconnect</button>
+  <button id="pollBtn" disabled>Start live data</button>
+  <button id="codesBtn" disabled>Read fault codes</button>
+</div>
+
+<div class="card">
+  <h2>Live data</h2>
+  <div id="tiles"><div class="empty">Connect to see what your engine computer reports.</div></div>
+</div>
+
+<div class="card">
+  <h2>Engine fault codes</h2>
+  <div id="mil" class="empty">Not read yet.</div>
+  <div id="codes"></div>
+  <div class="row"><button id="clearBtn" class="danger" disabled style="flex:1">Clear engine codes</button></div>
+</div>
+
+<div class="card">
+  <h2>Adapter console</h2>
+  <pre id="log"></pre>
+  <div class="row">
+    <input id="cmd" placeholder="e.g. ATDPN or 0902" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Notes</h2>
+  <ul class="note">
+    <li>Needs a Bluetooth Low Energy reader. iPhone: open this page in the free <b>Bluefy</b> browser (Safari has no Web Bluetooth). Android: Chrome works.</li>
+    <li>The page must load over https, for example from GitHub Pages.</li>
+    <li>Close any other OBD app first: the reader only talks to one app at a time.</li>
+    <li>This reads the standard engine side only. Airbag, lights and other modules need Volkswagen-specific diagnostics.</li>
+  </ul>
+</div>
+
+<script>
+// Common BLE serial services used by ELM327-style readers.
+const SERVICES = [0xfff0, 0xffe0, 0x18f0, 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'];
+
+// Standard Mode 01 PIDs worth showing on a diesel ute.
+const PIDS = {
+  0x0C:{n:'Engine speed',      u:'rpm',  f:(a,b)=>Math.round((a*256+b)/4)},
+  0x0D:{n:'Road speed',        u:'km/h', f:a=>a},
+  0x05:{n:'Coolant',           u:'°C',   f:a=>a-40},
+  0x0B:{n:'Intake pressure',   u:'kPa',  f:a=>a},
+  0x04:{n:'Engine load',       u:'%',    f:a=>Math.round(a*100/255)},
+  0x11:{n:'Throttle',          u:'%',    f:a=>Math.round(a*100/255)},
+  0x10:{n:'Air flow',          u:'g/s',  f:(a,b)=>((a*256+b)/100).toFixed(1)},
+  0x0F:{n:'Intake air temp',   u:'°C',   f:a=>a-40},
+  0x5C:{n:'Oil temp',          u:'°C',   f:a=>a-40},
+  0x46:{n:'Outside air',       u:'°C',   f:a=>a-40},
+  0x2F:{n:'Fuel level',        u:'%',    f:a=>Math.round(a*100/255)},
+  0x33:{n:'Barometric',        u:'kPa',  f:a=>a},
+  0x42:{n:'ECU supply',        u:'V',    f:(a,b)=>((a*256+b)/1000).toFixed(1)},
+};
+const ORDER = [0x0C,0x0D,0x05,0x0B,0x04,0x11,0x10,0x0F,0x5C,0x46,0x2F,0x33,0x42];
+
+let dev=null, rx=null, tx=null, buf='', pending=null, queue=Promise.resolve();
+let polling=false, supported=new Set(), isCAN=true, wakeLock=null;
+const $=id=>document.getElementById(id);
+const enc=new TextEncoder(), dec=new TextDecoder();
+const hex=n=>n.toString(16).toUpperCase().padStart(2,'0');
+
+function log(s){const el=$('log');el.textContent+=s+'\n';if(el.textContent.length>20000)el.textContent=el.textContent.slice(-15000);el.scrollTop=el.scrollHeight;}
+function setStatus(on,text){$('dot').classList.toggle('on',on);$('statusText').textContent=text;}
+function setConnected(on){
+  $('connectBtn').disabled=on;
+  ['disconnectBtn','pollBtn','codesBtn','clearBtn','sendBtn'].forEach(id=>$(id).disabled=!on);
+}
+
+// ---------- Bluetooth ----------
+async function connect(){
+  if(!navigator.bluetooth){
+    setStatus(false,'No Web Bluetooth here');
+    log('This browser has no Web Bluetooth. iPhone: use the Bluefy browser. Android: use Chrome.');
+    return;
+  }
+  try{
+    setStatus(false,'Choosing reader…');
+    dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:SERVICES});
+    dev.addEventListener('gattserverdisconnected',onDisconnect);
+    setStatus(false,'Connecting…');
+    const server=await dev.gatt.connect();
+    const services=await server.getPrimaryServices();
+    rx=tx=null;
+    for(const s of services){
+      let chars; try{chars=await s.getCharacteristics();}catch(e){continue;}
+      let n=null,w=null;
+      for(const c of chars){
+        if(!n&&(c.properties.notify||c.properties.indicate))n=c;
+        if(!w&&(c.properties.write||c.properties.writeWithoutResponse))w=c;
+      }
+      if(n&&w){rx=n;tx=w;log('Using service '+s.uuid);break;}
+    }
+    if(!rx) throw new Error('No OBD serial channel found on '+(dev.name||'this device'));
+    await rx.startNotifications();
+    rx.addEventListener('characteristicvaluechanged',onData);
+    setConnected(true);
+    setStatus(true,'Starting adapter…');
+    await init();
+  }catch(e){
+    log('ERROR: '+e.message);
+    setStatus(false,'Not connected');
+    if(dev&&dev.gatt.connected)dev.gatt.disconnect();
+  }
+}
+
+function onDisconnect(){
+  polling=false; rx=tx=null; buf='';
+  if(pending){clearTimeout(pending.t);pending.resolve('DISCONNECTED');pending=null;}
+  $('pollBtn').textContent='Start live data';
+  setConnected(false); setStatus(false,'Disconnected'); releaseWake();
+  log('-- disconnected --');
+}
+
+function onData(e){
+  buf+=dec.decode(e.target.value);
+  const i=buf.indexOf('>');
+  if(i>=0){
+    const resp=buf.slice(0,i); buf=buf.slice(i+1);
+    if(pending){const p=pending;pending=null;clearTimeout(p.t);p.resolve(resp);}
+  }
+}
+
+// Send one command and wait for the '>' prompt. Commands run one at a time.
+function send(cmd,{timeout=4000,quiet=false}={}){
+  const run=()=>new Promise(async(resolve,reject)=>{
+    if(!tx){reject(new Error('Not connected'));return;}
+    buf='';
+    pending={
+      resolve:r=>{
+        const clean=r.replace(/\r/g,'\n').split('\n').map(l=>l.trim())
+          .filter(l=>l&&l!==cmd&&!/^SEARCHING/i.test(l)).join('\n');
+        if(!quiet)log('> '+cmd+'\n'+(clean||'(empty)'));
+        resolve(clean);
+      },
+      t:setTimeout(()=>{pending=null;if(!quiet)log('> '+cmd+'\n(timeout)');resolve('TIMEOUT');},timeout)
+    };
+    const data=enc.encode(cmd+'\r');
+    try{
+      for(let i=0;i<data.length;i+=20){
+        const chunk=data.slice(i,i+20);
+        if(tx.properties.writeWithoutResponse) await tx.writeValueWithoutResponse(chunk);
+        else await tx.writeValue(chunk);
+      }
+    }catch(e){if(pending){clearTimeout(pending.t);pending=null;}reject(e);}
+  });
+  const p=queue.then(run,run); queue=p.catch(()=>{}); return p;
+}
+
+// ---------- Adapter setup ----------
+async function init(){
+  await send('ATZ',{timeout:6000});
+  await send('ATE0'); await send('ATL0'); await send('ATS0'); await send('ATH0');
+  await send('ATSP0');
+  setStatus(true,'Talking to the car…');
+  const r=await send('0100',{timeout:12000});
+  if(!/4100/i.test(r.replace(/\s/g,''))){
+    setStatus(true,'Reader OK, no reply from car. Ignition on?');
+    buildTiles(); return;
+  }
+  const dp=(await send('ATDPN')).trim().replace(/^A/i,'');
+  isCAN=/^[6-9A-C]$/i.test(dp);
+  await readSupported(r);
+  buildTiles();
+  await readMil();
+  setStatus(true,'Connected · '+supported.size+' values available');
+}
+
+async function readSupported(first){
+  supported.clear();
+  let base=0, resp=first;
+  while(true){
+    const flat=resp.replace(/\s/g,'');
+    const re=new RegExp('41'+hex(base)+'([0-9A-F]{8})','gi');
+    let found=false, m;
+    while((m=re.exec(flat))){
+      found=true;
+      const bits=parseInt(m[1],16)>>>0;
+      for(let i=0;i<32;i++) if((bits>>>(31-i))&1) supported.add(base+i+1);
+    }
+    if(!found||!supported.has(base+0x20)||base>=0xA0)break;
+    base+=0x20;
+    resp=await send('01'+hex(base));
+  }
+}
+
+// ---------- Live data ----------
+function buildTiles(){
+  const list=ORDER.filter(p=>supported.has(p));
+  let html=list.map(p=>`<div class="tile"><div class="label">${PIDS[p].n}</div><div><span class="val" id="v${p}">–</span><span class="unit">${PIDS[p].u}</span></div></div>`).join('');
+  html+=`<div class="tile"><div class="label">Battery (at reader)</div><div><span class="val" id="vrv">–</span><span class="unit">V</span></div></div>`;
+  $('tiles').innerHTML=html;
+}
+function setTile(id,v){const el=$('v'+id);if(el)el.textContent=v;}
+
+async function togglePoll(){
+  if(polling){polling=false;$('pollBtn').textContent='Start live data';releaseWake();return;}
+  polling=true;$('pollBtn').textContent='Stop live data';requestWake();
+  const list=ORDER.filter(p=>supported.has(p));
+  while(polling&&tx){
+    for(const p of list){
+      if(!polling||!tx)break;
+      const r=await send('01'+hex(p),{quiet:true,timeout:2000}).catch(()=>null);
+      if(!r)continue;
+      const m=r.replace(/\s/g,'').match(new RegExp('41'+hex(p)+'([0-9A-F]{2})([0-9A-F]{2})?','i'));
+      if(m) setTile(p,PIDS[p].f(parseInt(m[1],16),m[2]?parseInt(m[2],16):0));
+    }
+    if(!polling||!tx)break;
+    const v=await send('ATRV',{quiet:true}).catch(()=>null);
+    if(v&&/[\d.]+/.test(v)) setTile('rv',v.match(/[\d.]+/)[0]);
+    if(!list.length) await new Promise(r=>setTimeout(r,1000));
+  }
+}
+
+async function requestWake(){try{wakeLock=await navigator.wakeLock?.request('screen');}catch(e){}}
+function releaseWake(){try{wakeLock?.release();}catch(e){}wakeLock=null;}
+
+// ---------- Fault codes ----------
+async function readMil(){
+  const r=(await send('0101')).replace(/\s/g,'');
+  const m=r.match(/4101([0-9A-F]{2})/i);
+  if(!m){$('mil').textContent='Check engine status: no reply';return;}
+  const a=parseInt(m[1],16), on=!!(a&0x80);
+  $('mil').className='';
+  $('mil').innerHTML=`Check engine light: <span style="color:${on?'var(--bad)':'var(--ok)'}">${on?'ON':'OFF'}</span> · ${a&0x7f} stored code(s)`;
+}
+
+function decodeDTC(w){
+  const b=parseInt(w.slice(0,2),16);
+  return 'PCBU'[b>>6]+((b>>4)&3)+w[1].toUpperCase()+w.slice(2).toUpperCase();
+}
+
+function parseDTC(r,mode){
+  if(!r||r==='TIMEOUT')return [];
+  const lines=r.split('\n').map(l=>l.replace(/\s/g,'').toUpperCase());
+  let frames;
+  if(lines.some(l=>/^[0-9A-F]:/.test(l))){
+    frames=[lines.filter(l=>/^[0-9A-F]:/.test(l)).map(l=>l.slice(2)).join('')];
+  }else{
+    frames=lines.filter(l=>l.startsWith(mode));
+  }
+  const codes=[];
+  for(const f of frames){
+    const i=f.indexOf(mode); if(i<0)continue;
+    let d=f.slice(i+2);
+    if(isCAN)d=d.slice(2); // first byte is the code count on CAN
+    for(let j=0;j+4<=d.length;j+=4){
+      const w=d.slice(j,j+4);
+      if(/^[0-9A-F]{4}$/.test(w)&&w!=='0000')codes.push(decodeDTC(w));
+    }
+  }
+  return [...new Set(codes)];
+}
+
+async function readCodes(){
+  $('codes').innerHTML='<div class="empty">Reading…</div>';
+  await readMil();
+  const stored=parseDTC(await send('03',{timeout:6000}),'43');
+  const pend=parseDTC(await send('07',{timeout:6000}),'47').filter(c=>!stored.includes(c));
+  const row=(c,tag)=>`<div class="code"><span><b>${c}</b>${tag?`<span class="tag">${tag}</span>`:''}</span><a href="https://www.google.com/search?q=${encodeURIComponent('VW Amarok 2.0 TDI '+c)}" target="_blank" rel="noopener">Look up</a></div>`;
+  const html=stored.map(c=>row(c,'')).join('')+pend.map(c=>row(c,'pending')).join('');
+  $('codes').innerHTML=html||'<div class="empty">No engine codes stored.</div>';
+}
+
+async function clearCodes(){
+  if(!confirm('Clear engine fault codes?\n\nThis erases the stored codes and freeze-frame data and resets the readiness monitors. Write the codes down first.'))return;
+  await send('04',{timeout:6000});
+  await readCodes();
+}
+
+// ---------- Console ----------
+async function sendManual(){
+  const c=$('cmd').value.trim().toUpperCase();
+  if(!c)return;
+  $('cmd').value='';
+  await send(c,{timeout:8000}).catch(e=>log('ERROR: '+e.message));
+}
+
+$('connectBtn').onclick=connect;
+$('disconnectBtn').onclick=()=>{polling=false;if(dev&&dev.gatt.connected)dev.gatt.disconnect();};
+$('pollBtn').onclick=togglePoll;
+$('codesBtn').onclick=readCodes;
+$('clearBtn').onclick=clearCodes;
+$('sendBtn').onclick=sendManual;
+$('cmd').addEventListener('keydown',e=>{if(e.key==='Enter')sendManual();});
+</script>
+</body>
+</html>
