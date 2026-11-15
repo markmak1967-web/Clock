@@ -151,7 +151,9 @@ async function connect(){
     setStatus(true,'Starting adapter…');
     await init();
   }catch(e){
-    log('ERROR: '+e.message);
+    const msg=(e&&(e.message||e.name))||String(e);
+    log('ERROR: '+msg);
+    log('No reader chosen or none found. If your reader never shows in the list, it is classic Bluetooth, which iPhones cannot use.');
     setStatus(false,'Not connected');
     if(dev&&dev.gatt.connected)dev.gatt.disconnect();
   }
